@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>تقارير الشهر — كار تراك</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <style>
+    .month-picker {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+
+    .month-picker label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text2);
+      white-space: nowrap;
+    }
+
+    .month-picker select,
+    .month-picker input {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius2);
+      padding: 8px 12px;
+      font-family: "Cairo", sans-serif;
+      font-size: 13px;
+      color: var(--text);
+      outline: none;
+    }
+
+    .month-picker select:focus,
+    .month-picker input:focus {
+      border-color: var(--accent);
+    }
+
+    .period-badge {
+      margin-right: auto;
+      background: rgba(79, 124, 255, 0.1);
+      color: var(--accent);
+      border-radius: var(--radius2);
+      padding: 5px 14px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    /* Summary stat cards */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .sum-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      text-align: center;
+    }
+
+    .sum-card-val {
+      font-size: 24px;
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 5px;
+    }
+
+    .sum-card-lbl {
+      font-size: 11px;
+      color: var(--text2);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    /* Per-car section */
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text2);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* Collapsible car detail */
+    .car-block {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .car-block-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .car-block-head:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .car-block-plate {
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: 1px;
+    }
+
+    .car-block-name {
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    .car-block-stats {
+      margin-right: auto;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .car-block-chevron {
+      color: var(--text3);
+      font-size: 12px;
+      transition: transform 0.2s;
+    }
+
+    .car-block-chevron.open {
+      transform: rotate(180deg);
+    }
+
+    .car-block-body {
+      border-top: 1px solid var(--border);
+      padding: 0 16px;
+      max-height: 0;
+      overflow: hidden;
+      transition:
+        max-height 0.25s ease,
+        padding 0.2s;
+    }
+
+    .car-block-body.open {
+      max-height: 1000px;
+      padding: 12px 16px;
+    }
+
+    /* Detail table inside car block */
+    .detail-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .detail-table th {
+      text-align: right;
+      padding: 6px 10px;
+      background: var(--bg3);
+      color: var(--text2);
+      font-weight: 600;
+      font-size: 11px;
+    }
+
+    .detail-table td {
+      padding: 7px 10px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .detail-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Cost bar */
+    .cost-bar-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .cost-bar-bg {
+      flex: 1;
+      height: 6px;
+      background: var(--bg3);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .cost-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    .cost-bar-val {
+      font-size: 12px;
+      font-weight: 700;
+      min-width: 80px;
+      text-align: left;
+    }
+
+    /* KM Timeline inside car block */
+    .mini-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .mini-odo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+    }
+
+    .mini-odo:last-child {
+      border-bottom: none;
+    }
+
+    .mini-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .mini-dot.manual {
+      background: var(--accent);
+    }
+
+    .mini-dot.oil_change {
+      background: var(--yellow);
+    }
+
+    .mini-dot.filter_change {
+      background: var(--teal);
+    }
+
+    .mini-dot.other {
+      background: var(--text3);
+    }
+
+    .mini-km {
+      font-weight: 700;
+      width: 90px;
+    }
+
+    .mini-date {
+      color: var(--text2);
+      width: 100px;
+    }
+
+    .mini-delta {
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    .mini-delta.neg {
+      color: var(--red);
+    }
+
+    .mini-src {
+      color: var(--text3);
+      font-size: 11px;
+      margin-right: auto;
+    }
+
+    @media print {
+
+      .sidebar,
+      .btn,
+      .month-picker .btn,
+      .car-block-chevron {
+        display: none !important;
+      }
+
+      .car-block-body {
+        max-height: none !important;
+        padding: 12px 16px !important;
+      }
+
+      body {
+        background: #fff;
+        color: #000;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div id="sidebar-mount"></div>
+    <div class="main">
+      <div class="sm-menu">
+        <div class="sidebar-logo">
+          <div class="logo-icon">🚗</div>
+          <div class="text">
+            <h1>كار تراكر</h1>
+            <p>نظام متابعة السيارات</p>
+          </div>
+        </div>
+        <div class="bars">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+      <div class="topbar">
+        <div>
+          <div class="page-title">📊 تقارير الشهر</div>
+          <div class="page-sub">قراءات العداد · تكاليف الصيانة</div>
+        </div>
+        <button class="btn btn-ghost" onclick="window.print()">
+          🖨️ طباعة
+        </button>
+      </div>
+
+      <div class="content">
+        <!-- فلتر الشهر -->
+        <div class="month-picker">
+          <label>السنة:</label>
+          <input type="number" id="pick-year" min="2000" max="2099" style="width: 90px" />
+          <label>الشهر:</label>
+          <select id="pick-month">
+            <option value="1">يناير</option>
+            <option value="2">فبراير</option>
+            <option value="3">مارس</option>
+            <option value="4">أبريل</option>
+            <option value="5">مايو</option>
+            <option value="6">يونيو</option>
+            <option value="7">يوليو</option>
+            <option value="8">أغسطس</option>
+            <option value="9">سبتمبر</option>
+            <option value="10">أكتوبر</option>
+            <option value="11">نوفمبر</option>
+            <option value="12">ديسمبر</option>
+          </select>
+          <button class="btn btn-primary" onclick="loadBoth()">
+            🔍 عرض التقارير
+          </button>
+          <span class="period-badge hidden" id="period-badge"></span>
+        </div>
+
+        <!-- Tabs -->
+        <div class="report-tabs">
+          <button class="report-tab active" onclick="setTab('odometer', this)">
+            🔢 قراءات العداد
+          </button>
+          <button class="report-tab" onclick="setTab('costs', this)">
+            💰 تكاليف الصيانة
+          </button>
+        </div>
+
+        <!-- تقرير العداد -->
+        <div id="tab-odometer">
+          <div id="odo-report">
+            <div class="empty">
+              <div class="empty-icon">🔢</div>
+              <h3>اختر الشهر واضغط عرض</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- تقرير التكاليف -->
+        <div id="tab-costs" class="hidden">
+          <div id="cost-report">
+            <div class="empty">
+              <div class="empty-icon">💰</div>
+              <h3>اختر الشهر واضغط عرض</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="js/jquery.min.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    renderSidebar();
+
+    // ── Init month picker إلى الشهر الحالي ─────────────────────
+    const now = new Date();
+    document.getElementById("pick-year").value = now.getFullYear();
+    document.getElementById("pick-month").value = now.getMonth() + 1;
+
+    const SOURCE_LABELS = {
+      manual: "يدوي",
+      oil_change: "تغيير زيت",
+      filter_change: "تغيير فلتر",
+      other: "أخرى",
+    };
+    const FILTER_TYPE_AR = {
+      air: "فلتر هواء",
+      oil: "فلتر زيت",
+      fuel: "فلتر بنزين",
+      cabin: "فلتر كابينة",
+      other: "أخرى",
+    };
+
+    let currentTab = "odometer";
+
+    function setTab(tab, el) {
+      currentTab = tab;
+      document
+        .querySelectorAll(".report-tab")
+        .forEach((t) => t.classList.remove("active"));
+      el.classList.add("active");
+      document
+        .getElementById("tab-odometer")
+        .classList.toggle("hidden", tab !== "odometer");
+      document
+        .getElementById("tab-costs")
+        .classList.toggle("hidden", tab !== "costs");
+    }
+
+    async function loadBoth() {
+      const year = document.getElementById("pick-year").value;
+      const month = document.getElementById("pick-month").value;
+      if (!year || !month) return toast("اختر السنة والشهر", "error");
+
+      const badge = document.getElementById("period-badge");
+      badge.classList.add("hidden");
+
+      document.getElementById("odo-report").innerHTML =
+        '<div class="loading">جاري تحميل بيانات العداد...</div>';
+      document.getElementById("cost-report").innerHTML =
+        '<div class="loading">جاري تحميل بيانات التكاليف...</div>';
+
+      const [odoRes, costRes] = await Promise.allSettled([
+        get(`/reports/odometer?year=${year}&month=${month}`),
+        get(`/reports/maintenance-costs?year=${year}&month=${month}`),
+      ]);
+
+      if (odoRes.status === "fulfilled") {
+        renderOdoReport(odoRes.value);
+        badge.textContent = odoRes.value.period.label;
+        badge.classList.remove("hidden");
+      } else {
+        document.getElementById("odo-report").innerHTML =
+          `<div class="empty"><div class="empty-icon">❌</div><h3>${odoRes.reason.message}</h3></div>`;
+      }
+
+      if (costRes.status === "fulfilled") {
+        renderCostReport(costRes.value);
+      } else {
+        document.getElementById("cost-report").innerHTML =
+          `<div class="empty"><div class="empty-icon">❌</div><h3>${costRes.reason.message}</h3></div>`;
+      }
+    }
+
+    // ══════════════════════════════════════════════════
+    // تقرير 1 — قراءات العداد
+    // ══════════════════════════════════════════════════
+    function renderOdoReport({ period, summary, per_car_summary, readings }) {
+      const el = document.getElementById("odo-report");
+
+      // ملخص أرقام
+      const statsHtml = `
+              <div class="summary-grid">
+                <div class="sum-card"><div class="sum-card-val" style="color:var(--accent)">${summary.total_readings}</div><div class="sum-card-lbl">إجمالي القراءات</div></div>
+                <div class="sum-card"><div class="sum-card-val" style="color:var(--green)">${Number(summary.total_km_driven).toLocaleString("ar-EG")}</div><div class="sum-card-lbl">كم مقطوع إجمالي</div></div>
+                <div class="sum-card"><div class="sum-card-val" style="color:var(--yellow)">${summary.cars_with_data}</div><div class="sum-card-lbl">سيارات لديها قراءات</div></div>
+                <div class="sum-card"><div class="sum-card-val" style="color:var(--text2)">${summary.cars_total - summary.cars_with_data}</div><div class="sum-card-lbl">سيارات بدون قراءات</div></div>
+              </div>`;
+
+      if (!readings.length) {
+        el.innerHTML =
+          statsHtml +
+          `<div class="empty"><div class="empty-icon">📭</div><h3>لا توجد قراءات في هذا الشهر</h3></div>`;
+        return;
+      }
+
+      // تجميع القراءات حسب السيارة
+      const readingsByCar = {};
+      readings.forEach((r) => {
+        if (!readingsByCar[r.car_id]) readingsByCar[r.car_id] = [];
+        readingsByCar[r.car_id].push(r);
+      });
+
+      const maxKm = Math.max(
+        ...per_car_summary.map((c) => Number(c.total_km_driven) || 0),
+        1,
+      );
+
+      const carsHtml = per_car_summary
+        .map((car) => {
+          const carReadings = readingsByCar[car.car_id] || [];
+          const kmDriven = Number(car.total_km_driven) || 0;
+          const barPct = Math.round((kmDriven / maxKm) * 100);
+
+          const detailRows = carReadings.length
+            ? carReadings
+              .map(
+                (r) => `
+          <div class="mini-odo">
+            <div class="mini-dot ${r.source}"></div>
+            <span class="mini-km">${Number(r.reading_km).toLocaleString("ar-EG")} كم</span>
+            <span class="mini-date">${fmtDate(r.reading_date)}</span>
+            ${Number(r.km_since_prev) !== 0
+              ? `<span class="mini-delta ${Number(r.km_since_prev) < 0 ? "neg" : ""}">${Number(r.km_since_prev) > 0 ? "+" : ""}${Number(r.km_since_prev).toLocaleString("ar-EG")} كم</span>`
+              : ""}
+            <span class="mini-src">${SOURCE_LABELS[r.source] || r.source}</span>
+          </div>`,
+              )
+              .join("")
+            : '<div style="color:var(--text3);font-size:12px;padding:8px 0">لا توجد قراءات</div>';
+
+          return `
+      <div class="car-block">
+        <div class="car-block-head" onclick="toggleBlock(this)">
+          <div>
+            <div class="car-block-plate">${car.plate}</div>
+            <div class="car-block-name">${car.make} ${car.model}${car.driver ? " · " + car.driver : ""}</div>
+          </div>
+          <div class="car-block-stats">
+            ${carReadings.length
+              ? `${badge(carReadings.length + " قراءة", "blue")}
+                 ${kmDriven > 0 ? badge(Number(kmDriven).toLocaleString("ar-EG") + " كم", "green") : ""}`
+              : badge("لا قراءات", "gray")
+            }
+          </div>
+          <span class="car-block-chevron">▼</span>
+        </div>
+        ${carReadings.length
+              ? `
+        <div class="car-block-body">
+          <div style="margin-bottom:10px">
+            <div style="font-size:11px;color:var(--text2);margin-bottom:4px">المسافة المقطوعة في الشهر</div>
+            <div class="cost-bar-wrap">
+              <div class="cost-bar-bg"><div class="cost-bar-fill" style="width:${barPct}%;background:var(--accent)"></div></div>
+              <span class="cost-bar-val" style="color:var(--accent)">${Number(kmDriven).toLocaleString("ar-EG")} كم</span>
+            </div>
+            <div style="font-size:11px;color:var(--text2);margin-top:6px">
+              أول قراءة: <strong>${fmtKm(car.first_km)}</strong> في ${fmtDate(car.first_date)}
+              &nbsp;·&nbsp;
+              آخر قراءة: <strong>${fmtKm(car.last_km)}</strong> في ${fmtDate(car.last_date)}
+            </div>
+          </div>
+          <div class="mini-timeline">${detailRows}</div>
+        </div>`
+              : ""
+            }
+      </div>`;
+        })
+        .join("");
+
+      el.innerHTML =
+        statsHtml +
+        `<div class="section-title">تفاصيل كل سيارة</div>` +
+        carsHtml;
+    }
+
+    // ══════════════════════════════════════════════════
+    // تقرير 2 — تكاليف الصيانة
+    // ══════════════════════════════════════════════════
+    function renderCostReport({
+      period,
+      summary,
+      per_car_costs,
+      oil_changes,
+      filter_changes,
+    }) {
+      const el = document.getElementById("cost-report");
+
+      const statsHtml = `
+    <div class="summary-grid">
+      <div class="sum-card"><div class="sum-card-val" style="color:var(--green)">${Number(summary.grand_total).toLocaleString("ar-EG")} ج</div><div class="sum-card-lbl">إجمالي التكاليف</div></div>
+      <div class="sum-card"><div class="sum-card-val" style="color:var(--yellow)">${Number(summary.total_oil_cost).toLocaleString("ar-EG")} ج</div><div class="sum-card-lbl">تكاليف الزيت</div></div>
+      <div class="sum-card"><div class="sum-card-val" style="color:var(--teal)">${Number(summary.total_filter_cost).toLocaleString("ar-EG")} ج</div><div class="sum-card-lbl">تكاليف الفلاتر</div></div>
+      <div class="sum-card"><div class="sum-card-val" style="color:var(--accent)">${summary.oil_changes_count}</div><div class="sum-card-lbl">تغييرات زيت</div></div>
+      <div class="sum-card"><div class="sum-card-val" style="color:var(--accent)">${summary.filter_changes_count}</div><div class="sum-card-lbl">تغييرات فلاتر</div></div>
+      <div class="sum-card"><div class="sum-card-val" style="color:var(--orange)">${summary.cars_maintained}</div><div class="sum-card-lbl">سيارات تمت صيانتها</div></div>
+    </div>`;
+
+      if (!oil_changes.length && !filter_changes.length) {
+        el.innerHTML =
+          statsHtml +
+          `<div class="empty"><div class="empty-icon">💰</div><h3>لا توجد صيانة مسجلة في هذا الشهر</h3></div>`;
+        return;
+      }
+
+      const maxCost = Math.max(
+        ...per_car_costs.map((c) => Number(c.total_cost) || 0),
+        1,
+      );
+
+      // ملخص تكلفة كل سيارة مع بار
+      const perCarHtml = per_car_costs
+        .map((car) => {
+          const total = Number(car.total_cost) || 0;
+          const oilCost = Number(car.oil_cost) || 0;
+          const filtCost = Number(car.filter_cost) || 0;
+          if (car.operations_count === 0) return "";
+
+          // تفاصيل الزيت لهذه السيارة
+          const carOil = oil_changes.filter((o) => o.plate === car.plate);
+          const carFlt = filter_changes.filter((f) => f.plate === car.plate);
+
+          const oilRows = carOil
+            .map(
+              (o) => `
+      <tr>
+        <td>🛢️ زيت</td>
+        <td>${fmtDate(o.change_date)}</td>
+        <td>${fmtKm(o.km_at_change)}</td>
+        <td>${o.oil_brand ? o.oil_brand + (o.oil_grade ? " " + o.oil_grade : "") : "—"}</td>
+        <td>${o.workshop || "—"}</td>
+        <td style="font-weight:700;color:var(--yellow)">${fmtCost(o.cost)}</td>
+      </tr>`,
+            )
+            .join("");
+
+          const fltRows = carFlt
+            .map(
+              (f) => `
+      <tr>
+        <td>🔧 ${FILTER_TYPE_AR[f.filter_type] || f.filter_type}</td>
+        <td>${fmtDate(f.change_date)}</td>
+        <td>${fmtKm(f.km_at_change)}</td>
+        <td>${f.brand || "—"}</td>
+        <td>${f.workshop || "—"}</td>
+        <td style="font-weight:700;color:var(--teal)">${fmtCost(f.cost)}</td>
+      </tr>`,
+            )
+            .join("");
+
+          return `
+      <div class="car-block">
+        <div class="car-block-head" onclick="toggleBlock(this)">
+          <div>
+            <div class="car-block-plate">${car.plate}</div>
+            <div class="car-block-name">${car.make} ${car.model}${car.driver ? " · " + car.driver : ""}</div>
+          </div>
+          <div class="car-block-stats">
+            ${oilCost > 0 ? badge("زيت: " + Number(oilCost).toLocaleString("ar-EG") + " ج", "yellow") : ""}
+            ${filtCost > 0 ? badge("فلاتر: " + Number(filtCost).toLocaleString("ar-EG") + " ج", "blue") : ""}
+            ${badge("الإجمالي: " + Number(total).toLocaleString("ar-EG") + " ج", "green")}
+          </div>
+          <span class="car-block-chevron">▼</span>
+        </div>
+        <div class="car-block-body">
+          <div style="margin-bottom:12px">
+            <div style="font-size:11px;color:var(--text2);margin-bottom:4px">نسبة التكلفة من الأعلى</div>
+            <div class="cost-bar-wrap">
+              <div class="cost-bar-bg">
+                <div class="cost-bar-fill" style="width:${Math.round((oilCost / maxCost) * 100)}%;background:var(--yellow);float:right;border-radius:3px 0 0 3px"></div>
+              </div>
+            </div>
+            <div class="cost-bar-wrap" style="margin-top:4px">
+              <div class="cost-bar-bg"><div class="cost-bar-fill" style="width:${Math.round((total / maxCost) * 100)}%;background:var(--green)"></div></div>
+              <span class="cost-bar-val" style="color:var(--green)">${Number(total).toLocaleString("ar-EG")} ج</span>
+            </div>
+          </div>
+          <table class="detail-table">
+            <thead><tr><th>النوع</th><th>التاريخ</th><th>الكيلومتر</th><th>النوع/الماركة</th><th>الورشة</th><th>التكلفة</th></tr></thead>
+            <tbody>${oilRows}${fltRows}</tbody>
+          </table>
+        </div>
+      </div>`;
+        })
+        .join("");
+
+      el.innerHTML =
+        statsHtml +
+        `<div class="section-title">تفاصيل تكلفة كل سيارة</div>` +
+        perCarHtml;
+    }
+
+    // ── فتح / إغلاق بلوك السيارة ───────────────────────────────
+    function toggleBlock(head) {
+      const body = head.nextElementSibling;
+      const chevron = head.querySelector(".car-block-chevron");
+      if (!body) return;
+      const isOpen = body.classList.contains("open");
+      body.classList.toggle("open", !isOpen);
+      if (chevron) chevron.classList.toggle("open", !isOpen);
+    }
+
+    // تحميل تلقائي عند فتح الصفحة بالشهر الحالي
+    loadBoth();
+  </script>
+</body>
+
+</html>

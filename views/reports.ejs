@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>التقارير — كار تراك</title>
+  <link rel="stylesheet" href="css/main.css">
+</head>
+
+<body>
+  <div class="app">
+    <div id="sidebar-mount"></div>
+    <div class="main">
+      <div class="sm-menu">
+        <div class="sidebar-logo">
+          <div class="logo-icon">🚗</div>
+          <div class="text">
+            <h1>كار تراكر</h1>
+            <p>نظام متابعة السيارات</p>
+          </div>
+        </div>
+        <div class="bars">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+      <div class="topbar">
+        <div>
+          <div class="page-title">📈 التقارير</div>
+          <div class="page-sub">يومي — أسبوعي — شهري</div>
+        </div>
+        <button class="btn btn-ghost" onclick="window.print()">🖨️ طباعة</button>
+      </div>
+      <div class="content">
+        <div class="report-tabs">
+          <button class="report-tab active" onclick="setTab('daily',this)">📅 يومي</button>
+          <button class="report-tab" onclick="setTab('weekly',this)">📆 أسبوعي</button>
+          <button class="report-tab" onclick="setTab('monthly',this)">🗓️ شهري</button>
+        </div>
+        <div id="report-body">
+          <div class="loading">جاري التحميل...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="js/jquery.min.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    renderSidebar();
+    let currentTab = 'daily';
+
+    function setTab(tab, el) {
+      currentTab = tab;
+      document.querySelectorAll('.report-tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      loadReport();
+    }
+
+    function periodLabel(type, start, end) {
+      if (type === 'daily') return 'تقرير اليوم — ' + fmtDate(start);
+      if (type === 'weekly') return `تقرير الأسبوع (${fmtDate(start)} ← ${fmtDate(end)})`;
+      return 'تقرير شهر ' + new Date(start).toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
+    }
+
+    async function loadReport() {
+      document.getElementById('report-body').innerHTML = '<div class="loading">جاري إعداد التقرير...</div>';
+      try {
+        const { period, summary: s, oil_changes, filter_changes, licenses_renewed, expiring_licenses, overdue_oil, odometer_readings } = await get(`/reports/${currentTab}`).then(r => r);
+
+        // حساب total من الـ server
+        const html = `
+      <!-- header -->
+      <div style="background:var(--bg3);border-radius:var(--radius);padding:12px 16px;margin-bottom:18px;font-size:13px;color:var(--text2);display:flex;align-items:center;justify-content:space-between">
+        <span>📄 ${periodLabel(period.type, period.start, period.end)}</span>
+        <span>${fmtDate(new Date().toISOString().slice(0, 10))}</span>
+      </div>
+
+      <!-- summary stats -->
+      <div class="report-grid" style="margin-bottom:22px">
+        <div class="rep-stat"><div class="rep-stat-val" style="color:var(--accent)">${s.total_cars}</div><div class="rep-stat-lbl">إجمالي السيارات</div></div>
+        <div class="rep-stat"><div class="rep-stat-val" style="color:var(--red)">${s.overdue_oil_count}</div><div class="rep-stat-lbl">زيت متأخر</div></div>
+        <div class="rep-stat"><div class="rep-stat-val" style="color:var(--yellow)">${s.expiring_licenses_count}</div><div class="rep-stat-lbl">رخص ستنتهي</div></div>
+        <div class="rep-stat"><div class="rep-stat-val" style="color:var(--green)">${s.oil_changes_count}</div><div class="rep-stat-lbl">تغيير زيت في الفترة</div></div>
+        <div class="rep-stat"><div class="rep-stat-val" style="color:var(--teal)">${s.filter_changes_count}</div><div class="rep-stat-lbl">تغيير فلتر في الفترة</div></div>
+        <div class="rep-stat"><div class="rep-stat-val" style="color:var(--green)">${Number(s.total_cost).toLocaleString()} ج</div><div class="rep-stat-lbl">إجمالي التكاليف</div></div>
+      </div>
+
+      ${overdue_oil.length ? `
+      <div class="report-section">
+        <h4>🚨 سيارات الزيت متأخر عندها (${overdue_oil.length})</h4>
+        <table class="report-table">
+          <thead><tr><th>اللوحة</th><th>السيارة</th><th>الكيلومتر الحالي</th><th>المفروض تغيير عند</th><th>متأخر بـ</th></tr></thead>
+          <tbody>${overdue_oil.map(r => `
+            <tr>
+              <td style="font-weight:700">${r.plate}</td>
+              <td>${r.make} ${r.model}</td>
+              <td>${fmtKm(r.current_km)}</td>
+              <td>${fmtKm(r.next_oil_at_km)}</td>
+              <td style="color:var(--red);font-weight:700">${Number(r.overdue_by_km).toLocaleString()} كم</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>` : ''}
+
+      ${expiring_licenses.length ? `
+      <div class="report-section">
+        <h4>⚠️ رخص ستنتهي أو منتهية (${expiring_licenses.length})</h4>
+        <table class="report-table">
+          <thead><tr><th>اللوحة</th><th>السيارة</th><th>النوع</th><th>تاريخ الانتهاء</th><th>المتبقي</th></tr></thead>
+          <tbody>${expiring_licenses.map(l => {
+          const d = l.days_remaining;
+          const color = d < 0 ? 'var(--red)' : d < 7 ? 'var(--red)' : 'var(--yellow)';
+          return `<tr>
+              <td style="font-weight:700">${l.plate}</td>
+              <td>${l.make} ${l.model}</td>
+              <td>${l.doc_type}</td>
+              <td>${fmtDate(l.expiry_date)}</td>
+              <td style="color:${color};font-weight:600">${daysLabel(d)}</td>
+            </tr>`;
+        }).join('')}
+          </tbody>
+        </table>
+      </div>` : ''}
+
+      ${oil_changes.length ? `
+      <div class="report-section">
+        <h4>🛢️ تغييرات الزيت في الفترة (${oil_changes.length})</h4>
+        <table class="report-table">
+          <thead><tr><th>التاريخ</th><th>السيارة</th><th>الكيلومتر</th><th>نوع الزيت</th><th>التكلفة</th></tr></thead>
+          <tbody>${oil_changes.map(r => `
+            <tr>
+              <td>${fmtDate(r.change_date)}</td>
+              <td>${r.plate} — ${r.make} ${r.model}</td>
+              <td>${fmtKm(r.km_at_change)}</td>
+              <td>${r.oil_brand ? r.oil_brand + (r.oil_grade ? ' ' + r.oil_grade : '') : '—'}</td>
+              <td>${fmtCost(r.cost)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>` : ''}
+
+      ${filter_changes.length ? `
+      <div class="report-section">
+        <h4>🔧 تغييرات الفلاتر في الفترة (${filter_changes.length})</h4>
+        <table class="report-table">
+          <thead><tr><th>التاريخ</th><th>السيارة</th><th>النوع</th><th>الكيلومتر</th><th>التكلفة</th></tr></thead>
+          <tbody>${filter_changes.map(r => `
+            <tr>
+              <td>${fmtDate(r.change_date)}</td>
+              <td>${r.plate} — ${r.make} ${r.model}</td>
+              <td>${r.filter_type}</td>
+              <td>${fmtKm(r.km_at_change)}</td>
+              <td>${fmtCost(r.cost)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>` : ''}
+
+      ${licenses_renewed.length ? `
+      <div class="report-section">
+        <h4>📋 وثائق تم تجديدها في الفترة (${licenses_renewed.length})</h4>
+        <table class="report-table">
+          <thead><tr><th>السيارة</th><th>النوع</th><th>الإصدار</th><th>الانتهاء</th><th>التكلفة</th></tr></thead>
+          <tbody>${licenses_renewed.map(l => `
+            <tr>
+              <td>${l.plate} — ${l.make} ${l.model}</td>
+              <td>${l.doc_type}</td>
+              <td>${fmtDate(l.issue_date)}</td>
+              <td>${fmtDate(l.expiry_date)}</td>
+              <td>${fmtCost(l.cost)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>` : ''}
+
+      ${odometer_readings.length ? `
+      <div class="report-section">
+        <h4>🔢 قراءات العداد اليدوية في الفترة (${odometer_readings.length})</h4>
+        <table class="report-table">
+          <thead><tr><th>التاريخ</th><th>السيارة</th><th>القراءة</th><th>ملاحظات</th></tr></thead>
+          <tbody>${odometer_readings.map(o => `
+            <tr>
+              <td>${fmtDate(o.reading_date)}</td>
+              <td>${o.plate} — ${o.make} ${o.model}</td>
+              <td style="font-weight:700">${fmtKm(o.reading_km)}</td>
+              <td>${o.notes || '—'}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>` : ''}
+
+      ${overdue_oil.length + expiring_licenses.length + oil_changes.length + filter_changes.length + licenses_renewed.length === 0 ? `
+        <div class="empty"><div class="empty-icon">✅</div><h3>لا توجد أنشطة في هذه الفترة</h3><p>كل السيارات بخير</p></div>
+      ` : ''}
+    `;
+
+        document.getElementById('report-body').innerHTML = html;
+      } catch (e) {
+        document.getElementById('report-body').innerHTML = `<div class="empty"><div class="empty-icon">❌</div><h3>خطأ في تحميل التقرير</h3><p>${e.message}</p></div>`;
+      }
+    }
+
+    loadReport();
+  </script>
+</body>
+
+</html>

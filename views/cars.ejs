@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>السيارات — كار تراك</title>
+  <link rel="stylesheet" href="css/main.css">
+</head>
+
+<body>
+  <div class="app">
+    <div id="sidebar-mount"></div>
+    <div class="main">
+      <div class="sm-menu">
+        <div class="sidebar-logo">
+          <div class="logo-icon">🚗</div>
+          <div class="text">
+            <h1>كار تراكر</h1>
+            <p>نظام متابعة السيارات</p>
+          </div>
+        </div>
+        <div class="bars">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+      <div class="topbar">
+        <div>
+          <div class="page-title">إدارة السيارات</div>
+          <div class="page-sub">كل السيارات المسجلة</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal()">+ إضافة سيارة</button>
+      </div>
+      <div class="content">
+        <div class="table-wrap">
+          <div class="tbl-head" style="grid-template-columns:1.3fr 1.5fr 0.8fr 1.2fr 1.2fr 1fr 0.9fr">
+            <span>اللوحة</span><span>الماركة
+              والموديل</span><span>السنة</span><span>الكيلومتراج</span><span>المسؤول</span><span>الحالة</span><span>إجراءات</span>
+          </div>
+          <div id="cars-list">
+            <div class="loading">جاري التحميل...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay hidden" id="modal">
+    <div class="modal">
+      <div class="modal-head">
+        <h2 id="modal-title">إضافة سيارة جديدة</h2>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-id">
+        <div class="form-row"><label>رقم اللوحة *</label><input id="f-plate" placeholder="أ ب ج 1234"></div>
+        <div class="form-grid">
+          <div class="form-row"><label>الماركة *</label><input id="f-make" placeholder="تويوتا"></div>
+          <div class="form-row"><label>الموديل *</label><input id="f-model" placeholder="كامري"></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-row"><label>السنة</label><input id="f-year" type="number" placeholder="2021"></div>
+          <div class="form-row"><label>اللون</label><input id="f-color" placeholder="أبيض"></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-row"><label>الكيلومتراج الحالي</label><input id="f-km" type="number" placeholder="60000">
+          </div>
+          <div class="form-row"><label>رقم الهيكل (VIN)</label><input id="f-vin" placeholder="اختياري"></div>
+        </div>
+        <div class="form-row"><label>المسؤول / السائق</label><input id="f-driver" placeholder="اسم السائق"></div>
+        <div class="form-row"><label>ملاحظات</label><input id="f-notes" placeholder="أي ملاحظات"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" onclick="closeModal()">إلغاء</button>
+        <button class="btn btn-primary" onclick="saveCar()">💾 حفظ</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/jquery.min.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    renderSidebar();
+
+    async function loadCars() {
+      const { data: cars } = await get('/cars');
+      const el = document.getElementById('cars-list');
+      if (!cars.length) {
+        el.innerHTML = `<div class="empty"><div class="empty-icon">🚗</div><h3>لا توجد سيارات</h3><p>أضف أول سيارة للبدء</p></div>`;
+        return;
+      }
+      el.innerHTML = cars.map(c => {
+        const oilLeft = c.next_oil_km != null ? c.next_oil_km - c.current_km : null;
+        const d = daysUntil(c.nearest_expiry);
+        const st = oilLeft !== null && oilLeft < 0 ? ['صيانة عاجلة', 'red'] : d !== null && d < 0 ? ['رخصة منتهية', 'red'] : d !== null && d < 30 ? ['تنبيه', 'yellow'] : ['سليمة', 'green'];
+        return `<div class="tbl-row" style="grid-template-columns:1.3fr 1.5fr 0.8fr 1.2fr 1.2fr 1fr 0.9fr">
+      <div style="font-weight:700;letter-spacing:1px">${c.plate}</div>
+      <div>${c.make} ${c.model}</div>
+      <div>${c.year || '—'}</div>
+      <div>${fmtKm(c.current_km)}</div>
+      <div>${c.driver || '—'}</div>
+      <div>${badge(st[0], st[1])}</div>
+      <div class="row-actions">
+        <button class="row-btn" onclick='editCar(${JSON.stringify(c)})' title="تعديل">✏️</button>
+        <button class="row-btn" onclick='window.location="/odometer?car=${c.id}"' title="عداد">🔢</button>
+        <button class="row-btn del" onclick="deleteCar(${c.id})" title="حذف">🗑️</button>
+      </div>
+    </div>`;
+      }).join('');
+    }
+
+    function openModal(data) {
+      document.getElementById('edit-id').value = data?.id || '';
+      document.getElementById('modal-title').textContent = data ? 'تعديل السيارة' : 'إضافة سيارة جديدة';
+      ['plate', 'make', 'model', 'year', 'color', 'vin', 'driver', 'notes'].forEach(k => {
+        document.getElementById('f-' + k).value = data?.[k] || '';
+      });
+      document.getElementById('f-km').value = data?.current_km || '';
+      document.getElementById('modal').classList.remove('hidden');
+    }
+
+    function editCar(c) { openModal(c); }
+    function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+
+    async function saveCar() {
+      const id = document.getElementById('edit-id').value;
+      const body = {
+        plate: document.getElementById('f-plate').value.trim(),
+        make: document.getElementById('f-make').value.trim(),
+        model: document.getElementById('f-model').value.trim(),
+        year: document.getElementById('f-year').value || null,
+        color: document.getElementById('f-color').value || null,
+        vin: document.getElementById('f-vin').value || null,
+        current_km: Number(document.getElementById('f-km').value) || 0,
+        driver: document.getElementById('f-driver').value || null,
+        notes: document.getElementById('f-notes').value || null,
+      };
+      if (!body.plate || !body.make || !body.model) return toast('يرجى ملء الحقول المطلوبة', 'error');
+      try {
+        id ? await put(`/cars/${id}`, body) : await post('/cars', body);
+        toast(id ? 'تم التعديل' : 'تمت الإضافة');
+        closeModal(); loadCars();
+      } catch (e) { toast(e.message, 'error'); }
+    }
+
+    async function deleteCar(id) {
+      if (!confirm('حذف السيارة وكل سجلاتها؟')) return;
+      try { await del(`/cars/${id}`); toast('تم الحذف'); loadCars(); }
+      catch (e) { toast(e.message, 'error'); }
+    }
+
+    document.getElementById('modal').addEventListener('click', e => { if (e.target === document.getElementById('modal')) closeModal(); });
+    loadCars().catch(e => toast(e.message, 'error'));
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>تقرير حالة الزيت اليومي - كار تراكر</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <style>
+    .status-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .status-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      text-align: center;
+      border-top: 3px solid transparent;
+    }
+
+    .status-card.s-overdue {
+      border-top-color: var(--red);
+    }
+
+    .status-card.s-urgent {
+      border-top-color: var(--orange);
+    }
+
+    .status-card.s-soon {
+      border-top-color: var(--yellow);
+    }
+
+    .status-card.s-ok {
+      border-top-color: var(--green);
+    }
+
+    .status-card.s-none {
+      border-top-color: var(--text3);
+    }
+
+    .status-card.s-total {
+      border-top-color: var(--accent);
+    }
+
+    .sc-val {
+      font-size: 30px;
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 5px;
+    }
+
+    .sc-lbl {
+      font-size: 11px;
+      color: var(--text2);
+      font-weight: 700;
+      letter-spacing: 0.4px;
+    }
+
+    .s-overdue .sc-val {
+      color: var(--red);
+    }
+
+    .s-urgent .sc-val {
+      color: var(--orange);
+    }
+
+    .s-soon .sc-val {
+      color: var(--yellow);
+    }
+
+    .s-ok .sc-val {
+      color: var(--green);
+    }
+
+    .s-none .sc-val {
+      color: var(--text3);
+    }
+
+    .s-total .sc-val {
+      color: var(--accent);
+    }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 0.9fr;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .overview-panel,
+    .highlights-panel,
+    .insights-panel {
+      background:
+        radial-gradient(circle at top right,
+          rgba(79, 124, 255, 0.12),
+          transparent 34%),
+        linear-gradient(180deg,
+          rgba(255, 255, 255, 0.02),
+          rgba(255, 255, 255, 0)),
+        var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .overview-panel,
+    .highlights-panel,
+    .insights-panel {
+      padding: 18px;
+    }
+
+    .overview-head,
+    .meter-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .overview-head {
+      margin-bottom: 16px;
+    }
+
+    .section-kicker {
+      font-size: 11px;
+      color: var(--accent);
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .section-sub {
+      font-size: 12px;
+      color: var(--text2);
+      margin-top: 4px;
+    }
+
+    .headline-chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(79, 124, 255, 0.24);
+      background: rgba(79, 124, 255, 0.12);
+      color: #dce7ff;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .executive-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .exec-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .exec-card strong {
+      display: block;
+      font-size: 28px;
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 7px;
+    }
+
+    .exec-card span {
+      display: block;
+      font-size: 12px;
+      color: var(--text2);
+      font-weight: 700;
+    }
+
+    .exec-card small {
+      display: block;
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 6px;
+    }
+
+    .exec-card.accent strong {
+      color: var(--accent);
+    }
+
+    .exec-card.danger strong {
+      color: var(--red);
+    }
+
+    .exec-card.warn strong {
+      color: var(--orange);
+    }
+
+    .exec-card.good strong {
+      color: var(--green);
+    }
+
+    .highlights-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .highlight-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .highlight-item .label {
+      font-size: 11px;
+      color: var(--text2);
+      font-weight: 700;
+      margin-bottom: 7px;
+    }
+
+    .highlight-item .value {
+      font-size: 24px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .highlight-item .note {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 6px;
+    }
+
+    .highlight-item.red .value {
+      color: var(--red);
+    }
+
+    .highlight-item.orange .value {
+      color: var(--orange);
+    }
+
+    .highlight-item.blue .value {
+      color: var(--accent);
+    }
+
+    .insights-panel {
+      margin-bottom: 20px;
+    }
+
+    .insights-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 16px;
+      margin-top: 14px;
+    }
+
+    .health-meter,
+    .top-list {
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 15px;
+    }
+
+    .meter-title {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .meter-sub {
+      font-size: 11px;
+      color: var(--text2);
+      margin-top: 2px;
+    }
+
+    .meter-value {
+      font-size: 30px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .meter-track {
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      background: var(--bg3);
+      overflow: hidden;
+      margin-top: 12px;
+    }
+
+    .meter-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--green), #7ee787);
+    }
+
+    .meter-legend {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--text2);
+    }
+
+    .meter-legend b {
+      color: var(--text);
+    }
+
+    .top-list h3 {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .top-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 9px;
+    }
+
+    .top-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .top-row-main {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .top-row-plate {
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .top-row-meta {
+      font-size: 11px;
+      color: var(--text2);
+    }
+
+    .top-row-km {
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .top-row-km.danger {
+      color: var(--red);
+    }
+
+    .top-row-km.warn {
+      color: var(--orange);
+    }
+
+    .top-row-km.soon {
+      color: var(--yellow);
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-title {
+      font-size: 14px;
+      font-weight: 700;
+      flex: 1;
+    }
+
+    .search-box,
+    .filter-select {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius2);
+      padding: 7px 12px;
+      font-family: "Cairo", sans-serif;
+      font-size: 13px;
+      color: var(--text);
+      outline: none;
+    }
+
+    .search-box {
+      width: 220px;
+    }
+
+    .search-box:focus,
+    .filter-select:focus {
+      border-color: var(--accent);
+    }
+
+    .report-tbl-wrap {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .report-tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .report-tbl thead th {
+      text-align: right;
+      padding: 10px 14px;
+      background: var(--bg3);
+      color: var(--text2);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .report-tbl thead th:hover {
+      color: var(--text);
+    }
+
+    .report-tbl thead th.sort-asc::after {
+      content: " ▲";
+      font-size: 9px;
+    }
+
+    .report-tbl thead th.sort-desc::after {
+      content: " ▼";
+      font-size: 9px;
+    }
+
+    .report-tbl tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.1s;
+    }
+
+    .report-tbl tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    .report-tbl tbody tr:hover {
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .report-tbl tbody tr.row-overdue {
+      background: rgba(239, 68, 68, 0.05);
+    }
+
+    .report-tbl tbody tr.row-urgent {
+      background: rgba(249, 115, 22, 0.04);
+    }
+
+    .report-tbl tbody td {
+      padding: 11px 14px;
+      white-space: nowrap;
+    }
+
+    .plate-cell {
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
+
+    .km-cell {
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .driver-cell,
+    .date-cell {
+      color: var(--text2);
+      font-size: 12px;
+    }
+
+    .km-bar-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 130px;
+    }
+
+    .km-bar-bg {
+      flex: 1;
+      height: 5px;
+      background: var(--bg3);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .km-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+
+    .km-pct-txt {
+      font-size: 11px;
+      font-weight: 600;
+      min-width: 34px;
+      text-align: left;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    .sb-overdue {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--red);
+    }
+
+    .sb-urgent {
+      background: rgba(249, 115, 22, 0.15);
+      color: var(--orange);
+    }
+
+    .sb-soon {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--yellow);
+    }
+
+    .sb-ok {
+      background: rgba(34, 197, 94, 0.12);
+      color: var(--green);
+    }
+
+    .sb-none {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text3);
+    }
+
+    @media (max-width: 980px) {
+
+      .overview-grid,
+      .insights-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .executive-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .overview-head,
+      .meter-head {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .search-box,
+      .filter-select {
+        width: 100%;
+      }
+    }
+
+    @media print {
+
+      .overview-grid,
+      .insights-grid {
+        grid-template-columns: 1fr !important;
+      }
+
+      .sidebar,
+      .toolbar .btn,
+      .search-box,
+      .filter-select,
+      .btn-ghost,
+      .topbar .btn {
+        display: none !important;
+      }
+
+      body {
+        background: #fff;
+        color: #000;
+      }
+
+      .report-tbl tbody tr.row-overdue {
+        background: #fff0f0 !important;
+      }
+
+      .report-tbl tbody tr.row-urgent {
+        background: #fff7f0 !important;
+      }
+
+      .status-card,
+      .overview-panel,
+      .highlights-panel,
+      .insights-panel {
+        border: 1px solid #ccc;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div id="sidebar-mount"></div>
+    <div class="main">
+      <div class="sm-menu">
+        <div class="sidebar-logo">
+          <div class="logo-icon">🚗</div>
+          <div class="text">
+            <h1>كار تراكر</h1>
+            <p>نظام متابعة السيارات</p>
+          </div>
+        </div>
+        <div class="bars">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+      <div class="topbar">
+        <div>
+          <div class="page-title" id="report-title">
+            تقرير حالة الزيت اليومي
+          </div>
+          <div class="page-sub" id="report-date"></div>
+        </div>
+        <div style="display: flex; gap: 8px">
+          <button class="btn btn-ghost" onclick="loadReport()">تحديث</button>
+          <button class="btn btn-ghost" onclick="window.print()">
+            طباعة
+          </button>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="status-bar" id="status-bar">
+          <div class="loading" style="grid-column: 1/-1">جارٍ التحميل...</div>
+        </div>
+
+        <!-- <div class="overview-grid">
+            <section class="overview-panel">
+              <div class="overview-head">
+                <div>
+                  <div class="section-kicker">Executive Summary</div>
+                  <div class="section-title">
+                    التقرير الإجمالي لمتابعة تغيير الزيت
+                  </div>
+                  <div class="section-sub" id="overview-subtitle">
+                    جارٍ تجهيز مؤشرات الأسطول...
+                  </div>
+                </div>
+                <div class="headline-chip" id="headline-chip">
+                  بانتظار البيانات
+                </div>
+              </div>
+              <div class="executive-metrics" id="executive-metrics">
+                <div class="loading" style="grid-column: 1/-1">
+                  جارٍ تحميل المؤشرات...
+                </div>
+              </div>
+            </section>
+
+            <aside class="highlights-panel" id="highlights-panel">
+              <div class="loading">جارٍ تحميل الملخص السريع...</div>
+            </aside>
+          </div> -->
+
+        <!-- <section class="insights-panel">
+        <div class="section-kicker">Fleet Insights</div>
+        <div class="section-title" style="font-size:16px">نظرة تشغيلية سريعة</div>
+        <div class="section-sub">مؤشرات مناسبة للعرض في الاجتماع أو للطباعة المباشرة.</div>
+        <div class="insights-grid">
+          <div class="health-meter" id="health-meter">
+            <div class="loading">جارٍ حساب سلامة الأسطول...</div>
+          </div>
+          <div class="top-list">
+            <h3>الأعلى أولوية الآن</h3>
+            <div class="top-rows" id="top-priority-list">
+              <div class="loading" style="padding:12px 0">جارٍ تحميل القائمة...</div>
+            </div>
+          </div>
+        </div>
+      </section> -->
+
+        <div class="toolbar">
+          <span class="toolbar-title">جدول السيارات</span>
+          <input class="search-box" id="search" placeholder="ابحث برقم اللوحة أو السائق..." oninput="applyFilters()" />
+          <select class="filter-select" id="report-type" onchange="loadReport()">
+            <option value="engine_oil">تقرير زيت ماتور</option>
+            <option value="oil_filter">تقرير فلاتر زيت</option>
+            <option value="air_filter">تقرير فلاتر هواء</option>
+            <option value="fuel_filter">تقرير فلتر جاز</option>
+          </select>
+          <span id="row-count" style="font-size: 12px; color: var(--text2)"></span>
+        </div>
+
+        <div class="report-tbl-wrap">
+          <table class="report-tbl" id="main-table">
+            <thead>
+              <tr>
+                <th onclick="sortBy('plate')">#</th>
+                <th onclick="sortBy('plate')">رقم اللوحة</th>
+                <th onclick="sortBy('model')">السيارة</th>
+                <th onclick="sortBy('driver')">المسؤول</th>
+                <th onclick="sortBy('last_oil_km')">عداد آخر تغيير</th>
+                <th onclick="sortBy('current_km')">العداد الحالي</th>
+                <th onclick="sortBy('next_oil_at_km')">التغيير القادم عند</th>
+                <th onclick="sortBy('km_remaining')">المتبقي / الاستهلاك</th>
+                <th onclick="sortBy('status_order')">الحالة</th>
+              </tr>
+            </thead>
+            <tbody id="table-body">
+              <tr>
+                <td colspan="9" style="
+                      text-align: center;
+                      padding: 30px;
+                      color: var(--text2);
+                    ">
+                  جارٍ التحميل...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="js/jquery.min.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/oil-status.js"></script>
+</body>
+
+</html>

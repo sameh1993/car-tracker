@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>قراءات العداد — كار تراك</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <style>
+    .car-selector {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+
+    .car-selector select {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius2);
+      padding: 8px 12px;
+      font-family: "Cairo", sans-serif;
+      font-size: 13px;
+      color: var(--text);
+      outline: none;
+      min-width: 220px;
+    }
+
+    .car-selector select:focus {
+      border-color: var(--accent);
+    }
+
+    .odo-hero {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 20px;
+    }
+
+    .odo-hero-km {
+      font-size: 42px;
+      font-weight: 900;
+      color: var(--accent);
+      letter-spacing: -1px;
+    }
+
+    .odo-hero-label {
+      font-size: 12px;
+      color: var(--text2);
+      margin-top: 2px;
+    }
+
+    .odo-hero-sep {
+      width: 1px;
+      height: 50px;
+      background: var(--border);
+    }
+
+    .odo-hero-info {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .odo-hero-row {
+      font-size: 12px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .odo-hero-row span:first-child {
+      color: var(--text2);
+      width: 100px;
+    }
+
+    .odo-layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 18px;
+    }
+
+    @media (max-width: 860px) {
+      .odo-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .odo-hero {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 16px;
+      }
+
+      .odo-hero-km {
+        font-size: 34px;
+      }
+
+      .odo-hero-sep {
+        width: 100%;
+        height: 1px;
+      }
+
+      .odo-hero-row {
+        flex-wrap: wrap;
+      }
+
+      .odo-hero-row span:first-child {
+        width: auto;
+        min-width: 84px;
+      }
+    }
+
+    .add-reading-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      height: fit-content;
+    }
+
+    .add-reading-card h3 {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: var(--text2);
+    }
+
+    @media (max-width: 640px) {
+      .add-reading-card {
+        padding: 14px;
+      }
+
+      .last-km-box {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+    }
+
+    .last-km-box {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius2);
+      padding: 10px 13px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .last-km-box .lk-label {
+      font-size: 11px;
+      color: var(--text2);
+      font-weight: 600;
+    }
+
+    .last-km-box .lk-val {
+      font-size: 18px;
+      font-weight: 900;
+      color: var(--accent);
+      letter-spacing: -0.5px;
+    }
+
+    .last-km-box .lk-date {
+      font-size: 10px;
+      color: var(--text3);
+      margin-top: 1px;
+    }
+
+    .last-km-box.no-data .lk-val {
+      font-size: 13px;
+      color: var(--text3);
+    }
+
+    .km-input-wrap {
+      position: relative;
+    }
+
+    .km-input-wrap input {
+      padding-left: 36px !important;
+    }
+
+    .km-status-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 15px;
+      pointer-events: none;
+    }
+
+    .km-hint {
+      font-size: 11px;
+      margin-top: 5px;
+      min-height: 16px;
+      transition: color 0.2s;
+    }
+
+    .km-hint.ok {
+      color: var(--green);
+    }
+
+    .km-hint.error {
+      color: var(--red);
+    }
+
+    .km-hint.idle {
+      color: var(--text3);
+    }
+
+    input.input-ok {
+      border-color: var(--green) !important;
+    }
+
+    input.input-error {
+      border-color: var(--red) !important;
+    }
+
+    /* ===== Readings Table ===== */
+    .odo-table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    .odo-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .odo-table thead tr {
+      background: var(--bg3);
+      border-bottom: 2px solid var(--border2);
+    }
+
+    .odo-table thead th {
+      padding: 10px 14px;
+      text-align: right;
+      font-weight: 700;
+      color: var(--text2);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .odo-table tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+
+    .odo-table tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    .odo-table tbody tr:hover {
+      background: var(--bg3);
+    }
+
+    .odo-table td {
+      padding: 10px 14px;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    .odo-table .td-prev {
+      color: var(--text2);
+      font-size: 12px;
+    }
+
+    .odo-table .td-curr {
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .odo-table .td-diff {
+      font-weight: 700;
+    }
+
+    .odo-table .td-diff.pos {
+      color: var(--green);
+    }
+
+    .odo-table .td-diff.zero {
+      color: var(--text3);
+    }
+
+    .odo-table .td-notes {
+      font-size: 11px;
+      color: var(--text2);
+      max-width: 160px;
+      white-space: normal;
+    }
+
+    .odo-table .td-action {
+      text-align: center;
+      width: 40px;
+    }
+
+    @media (max-width: 560px) {
+
+      .odo-table thead th:nth-child(2),
+      .odo-table td:nth-child(2) {
+        display: none;
+      }
+
+      /* hide prev on mobile */
+      .odo-table thead th:nth-child(6),
+      .odo-table td:nth-child(6) {
+        display: none;
+      }
+
+      /* hide notes on mobile */
+    }
+
+    @media print {
+      .add-reading-card {
+        display: none;
+      }
+
+      #odo-hero {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div id="sidebar-mount"></div>
+
+    <div class="main">
+      <div class="sm-menu">
+        <div class="sidebar-logo">
+          <div class="logo-icon">🚗</div>
+          <div class="text">
+            <h1>كار تراكر</h1>
+            <p>نظام متابعة السيارات</p>
+          </div>
+        </div>
+        <div class="bars">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+      <div class="topbar">
+        <div>
+          <div class="page-title">🔢 قراءات العداد</div>
+          <div class="page-sub">السجل التاريخي وتحديث الكيلومتراج</div>
+        </div>
+      </div>
+      <div class="content">
+        <!-- اختيار السيارة -->
+        <div class="car-selector">
+          <label style="font-size: 13px; color: var(--text2); font-weight: 600">اختر السيارة:</label>
+          <select id="car-select" onchange="onCarChange()">
+            <option value="">— اختر —</option>
+          </select>
+        </div>
+
+        <!-- بطاقة الكيلومتراج الحالي -->
+        <div id="odo-hero" class="hidden"></div>
+
+        <div class="odo-layout">
+          <!-- Timeline -->
+          <div>
+            <div style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                  margin-bottom: 12px;
+                ">
+              <h3 style="font-size: 14px; font-weight: 700">
+                السجل التاريخي
+              </h3>
+              <span id="readings-count" style="font-size: 12px; color: var(--text2)"></span>
+            </div>
+            <div id="timeline">
+              <div class="empty">
+                <div class="empty-icon">🔢</div>
+                <h3>اختر سيارة لعرض السجل</h3>
+              </div>
+            </div>
+          </div>
+
+          <!-- إضافة قراءة -->
+          <div class="add-reading-card">
+            <h3>➕ تسجيل قراءة جديدة</h3>
+
+            <!-- آخر عداد مسجل -->
+            <div class="last-km-box no-data" id="last-km-box">
+              <div>
+                <div class="lk-label">آخر عداد مسجل</div>
+                <div class="lk-val" id="lk-val">اختر سيارة أولاً</div>
+                <div class="lk-date" id="lk-date"></div>
+              </div>
+              <span id="lk-icon" style="font-size: 22px">🔢</span>
+            </div>
+
+            <div class="form-row">
+              <label>التاريخ</label>
+              <input type="date" id="r-date" />
+            </div>
+
+            <div class="form-row">
+              <label>قراءة العداد الجديدة (كم) *</label>
+              <div class="km-input-wrap">
+                <input type="number" id="r-km" placeholder="مثال: 75000" oninput="validateKm()" min="0" />
+                <span class="km-status-icon" id="km-icon"></span>
+              </div>
+              <div class="km-hint idle" id="km-hint">
+                أدخل القراءة الجديدة
+              </div>
+            </div>
+
+            <div class="form-row">
+              <label>ملاحظات</label>
+              <input id="r-notes" placeholder="سبب القراءة أو أي ملاحظة" />
+            </div>
+
+            <button class="btn btn-primary" id="save-btn" style="width: 100%; justify-content: center"
+              onclick="saveReading()">
+              💾 حفظ القراءة
+            </button>
+            <div style="
+                  margin-top: 12px;
+                  font-size: 11px;
+                  color: var(--text3);
+                  line-height: 1.6;
+                ">
+              ملاحظة: عند تسجيل تغيير زيت أو فلتر يتم تسجيل قراءة العداد
+              تلقائياً.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="js/jquery.min.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script src="js/utils.js"></script>
+  <!-- <script src="js/odometer.js"></script> -->
+  <script>
+    renderSidebar();
+    document.getElementById("r-date").value = today();
+
+    const SOURCE_LABELS = {
+      manual: { label: "يدوي", cls: "blue", dot: "manual" },
+      oil_change: { label: "تغيير زيت", cls: "yellow", dot: "oil_change" },
+      filter_change: {
+        label: "تغيير فلتر",
+        cls: "blue",
+        dot: "filter_change",
+      },
+      other: { label: "أخرى", cls: "gray", dot: "other" },
+    };
+
+    let currentCarId = null;
+    let lastKm = null; // آخر قراءة مسجلة للسيارة المختارة
+
+    // ── تحديث بوكس آخر قراءة ───────────────────────────────────
+    function updateLastKmBox(log) {
+      const box = document.getElementById("last-km-box");
+      const val = document.getElementById("lk-val");
+      const date = document.getElementById("lk-date");
+      const icon = document.getElementById("lk-icon");
+
+      if (!log) {
+        lastKm = null;
+        box.classList.add("no-data");
+        val.textContent = "لا توجد قراءات سابقة";
+        date.textContent = "";
+        icon.textContent = "🔢";
+      } else {
+        lastKm = Number(log.reading_km);
+        box.classList.remove("no-data");
+        val.textContent = lastKm.toLocaleString("ar-EG") + " كم";
+        date.textContent = fmtDate(log.reading_date);
+        icon.textContent = "📍";
+        // حط الـ min على input تلقائي
+        document.getElementById("r-km").min = lastKm + 1;
+      }
+      // reset validation عند تغيير السيارة
+      resetKmValidation();
+    }
+
+    // ── Validation لحظية ────────────────────────────────────────
+    function validateKm() {
+      const input = document.getElementById("r-km");
+      const hint = document.getElementById("km-hint");
+      const icon = document.getElementById("km-icon");
+      const val = Number(input.value);
+
+      // لو الحقل فاضي
+      if (!input.value) {
+        resetKmValidation();
+        return true;
+      }
+
+      // لو مفيش قراءة سابقة — أي رقم موجب ينفع
+      if (lastKm === null) {
+        input.classList.remove("input-error", "input-ok");
+        hint.textContent = "";
+        hint.className = "km-hint idle";
+        icon.textContent = "";
+        return true;
+      }
+
+      if (val <= lastKm) {
+        input.classList.add("input-error");
+        input.classList.remove("input-ok");
+        hint.textContent = `❌ لازم يكون أكبر من ${lastKm.toLocaleString("ar-EG")} كم`;
+        hint.className = "km-hint error";
+        icon.textContent = "❌";
+        return false;
+      } else {
+        const diff = val - lastKm;
+        input.classList.add("input-ok");
+        input.classList.remove("input-error");
+        hint.textContent = `✅ زيادة ${diff.toLocaleString("ar-EG")} كم عن آخر قراءة`;
+        hint.className = "km-hint ok";
+        icon.textContent = "✅";
+        return true;
+      }
+    }
+
+    function resetKmValidation() {
+      const input = document.getElementById("r-km");
+      const hint = document.getElementById("km-hint");
+      const icon = document.getElementById("km-icon");
+      input.classList.remove("input-ok", "input-error");
+      hint.textContent =
+        lastKm !== null
+          ? `آخر قراءة: ${lastKm.toLocaleString("ar-EG")} كم — الجديدة لازم تكون أكبر`
+          : "أدخل القراءة الجديدة";
+      hint.className = "km-hint idle";
+      icon.textContent = "";
+    }
+
+    // ── ملء قائمة السيارات ──────────────────────────────────────
+    async function loadCarList() {
+      const cars = await getCars();
+      const sel = document.getElementById("car-select");
+      sel.innerHTML =
+        '<option value="">— اختر —</option>' +
+        cars
+          .map(
+            (c) =>
+              `<option value="${c.id}">${c.plate} — ${c.make} ${c.model} (${fmtKm(c.current_km)})</option>`,
+          )
+          .join("");
+
+      const urlCar = new URLSearchParams(location.search).get("car");
+      if (urlCar) {
+        sel.value = urlCar;
+        onCarChange();
+      }
+    }
+
+    function onCarChange() {
+      currentCarId = document.getElementById("car-select").value;
+      // reset الفورم
+      document.getElementById("r-km").value = "";
+      updateLastKmBox(null);
+      if (!currentCarId) {
+        document.getElementById("odo-hero").classList.add("hidden");
+        document.getElementById("timeline").innerHTML =
+          `<div class="empty"><div class="empty-icon">🔢</div><h3>اختر سيارة</h3></div>`;
+        document.getElementById("readings-count").textContent = "";
+        return;
+      }
+      loadOdometer(currentCarId);
+    }
+
+    // كاش للسيارات — نجيبها مرة واحدة بس ومنكررش الـ API call
+    let _carsCache = null;
+    async function getCars() {
+      if (!_carsCache) {
+        const { data } = await get("/cars");
+        _carsCache = data;
+      }
+      return _carsCache;
+    }
+
+    async function loadOdometer(carId) {
+      document.getElementById("timeline").innerHTML =
+        `<div class="loading">جاري التحميل...</div>`;
+      try {
+        // ✅ إصلاح الأداء: نجيب السيارات من الكاش مش API جديد
+        const [{ data: logs }, cars] = await Promise.all([
+          get(`/odometer/${carId}`),
+          getCars(),
+        ]);
+        const car = cars.find((c) => c.id == carId);
+
+        // تحديث بوكس آخر قراءة في الفورم
+        updateLastKmBox(logs[0] || null);
+
+        // hero
+        const hero = document.getElementById("odo-hero");
+        hero.classList.remove("hidden");
+        const lastLog = logs[0];
+        hero.innerHTML = `
+      <div>
+        <div class="odo-hero-km">${(car?.current_km || 0).toLocaleString("ar-EG")}</div>
+        <div class="odo-hero-label">كيلومتر — الكيلومتراج الحالي</div>
+      </div>
+      <div class="odo-hero-sep"></div>
+      <div class="odo-hero-info">
+        <div class="odo-hero-row"><span>آخر قراءة:</span><span>${lastLog ? fmtDate(lastLog.reading_date) : "—"}</span></div>
+        <div class="odo-hero-row"><span>عدد القراءات:</span><span>${logs.length} قراءة</span></div>
+        <div class="odo-hero-row"><span>الماركة:</span><span>${car ? car.make + " " + car.model : "—"}</span></div>
+      </div>
+    `;
+
+        document.getElementById("readings-count").textContent =
+          `${logs.length} قراءة مسجلة`;
+
+        // ── جدول القراءات ──────────────────────────────────────────
+        const tl = document.getElementById("timeline");
+        if (!logs.length) {
+          tl.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><h3>لا توجد قراءات مسجلة</h3><p>سجل أول قراءة من اليمين</p></div>`;
+          return;
+        }
+
+        const rows = logs
+          .map((log, i) => {
+            const src = SOURCE_LABELS[log.source] || SOURCE_LABELS.other;
+            const curr = Number(log.reading_km);
+            // القراءة السابقة: إما من الـ API (km_since_last) أو نحسبها من السجل القادم
+            const prevKm =
+              log.km_since_last > 0
+                ? curr - log.km_since_last
+                : logs[i + 1]
+                  ? Number(logs[i + 1].reading_km)
+                  : null;
+            const diff = prevKm !== null ? curr - prevKm : null;
+
+            const prevCell =
+              prevKm !== null
+                ? `<span class="td-prev">${prevKm.toLocaleString("ar-EG")} كم</span>`
+                : `<span style="color:var(--text3)">—</span>`;
+
+            const diffCell =
+              diff !== null
+                ? `<span class="td-diff ${diff > 0 ? "pos" : "zero"}">
+                  ${diff > 0 ? "+" : ""}${diff.toLocaleString("ar-EG")} كم
+                 </span>`
+                : `<span style="color:var(--text3)">—</span>`;
+
+            const delBtn =
+              log.source === "manual"
+                ? `<button class="row-btn del" onclick="deleteReading(${log.id})" title="حذف">🗑️</button>`
+                : "";
+
+            return `<tr>
+              <td>${fmtDate(log.reading_date)}<br><span style="font-size:10px;color:var(--text3)">${badge(src.label, src.cls)}</span></td>
+              <td class="td-prev">${prevCell}</td>
+              <td class="td-curr">${curr.toLocaleString("ar-EG")} كم</td>
+              <td>${diffCell}</td>
+              <td class="td-notes">${log.notes || "—"}</td>
+              <td class="td-action">${delBtn}</td>
+            </tr>`;
+          })
+          .join("");
+
+        tl.innerHTML = `
+            <div class="odo-table-wrap">
+              <table class="odo-table">
+                <thead>
+                  <tr>
+                    <th>التاريخ / المصدر</th>
+                    <th>القراءة السابقة</th>
+                    <th>القراءة الحالية</th>
+                    <th>الفرق</th>
+                    <th>ملاحظات</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </div>`;
+      } catch (e) {
+        toast(e.message, "error");
+      }
+    }
+
+    async function saveReading() {
+      if (!currentCarId) return toast("اختر سيارة أولاً", "error");
+      const km = document.getElementById("r-km").value;
+      if (!km) return toast("أدخل قراءة العداد", "error");
+
+      // client-side validation
+      if (!validateKm()) {
+        document.getElementById("r-km").focus();
+        return;
+      }
+
+      try {
+        await post("/odometer", {
+          car_id: currentCarId,
+          reading_km: Number(km),
+          reading_date: document.getElementById("r-date").value,
+          notes: document.getElementById("r-notes").value || null,
+        });
+        toast("تم تسجيل القراءة ✅");
+        document.getElementById("r-km").value = "";
+        document.getElementById("r-notes").value = "";
+        _carsCache = null; // ✅ نمسح الكاش عشان الـ km يتحدث في الـ dropdown
+        await loadCarList();
+        loadOdometer(currentCarId);
+        loadNavBadges();
+      } catch (e) {
+        toast(e.message, "error");
+      }
+    }
+
+    async function deleteReading(id) {
+      if (!confirm("حذف هذه القراءة؟")) return;
+      try {
+        await del(`/odometer/${id}`);
+        toast("تم الحذف");
+        loadOdometer(currentCarId);
+      } catch (e) {
+        toast(e.message, "error");
+      }
+    }
+
+    loadCarList().catch((e) => toast(e.message, "error"));
+  </script>
+</body>
+
+</html>

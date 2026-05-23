@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>الفلاتر — كار تراك</title>
+  <link rel="stylesheet" href="css/main.css">
+</head>
+
+<body>
+  <div class="app">
+    <div id="sidebar-mount"></div>
+    <div class="main">
+      <div class="sm-menu">
+        <div class="sidebar-logo">
+          <div class="logo-icon">🚗</div>
+          <div class="text">
+            <h1>كار تراكر</h1>
+            <p>نظام متابعة السيارات</p>
+          </div>
+        </div>
+        <div class="bars">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+      <div class="topbar">
+        <div>
+          <div class="page-title">🔧 الفلاتر</div>
+          <div class="page-sub">فلتر الهواء والبنزين والزيت وكابينة</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal()">+ تسجيل تغيير فلتر</button>
+      </div>
+      <div class="content">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+          <select id="filter-car" onchange="loadFilters()"
+            style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius2);padding:7px 11px;font-family:Cairo,sans-serif;font-size:12px;color:var(--text);outline:none">
+            <option value="">كل السيارات</option>
+          </select>
+          <select id="filter-type" onchange="loadFilters()"
+            style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius2);padding:7px 11px;font-family:Cairo,sans-serif;font-size:12px;color:var(--text);outline:none">
+            <option value="">كل الأنواع</option>
+            <option value="air">فلتر هواء</option>
+            <option value="oil">فلتر زيت</option>
+            <option value="fuel">فلتر بنزين</option>
+            <option value="cabin">فلتر كابينة</option>
+            <option value="other">أخرى</option>
+          </select>
+        </div>
+        <div class="maint-grid" id="filter-list">
+          <div class="loading">جاري التحميل...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay hidden" id="modal">
+    <div class="modal">
+      <div class="modal-head">
+        <h2>🔧 تسجيل تغيير فلتر</h2><button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row"><label>السيارة *</label><select id="f-car">
+            <option value="">اختر السيارة</option>
+          </select></div>
+        <div class="form-grid">
+          <div class="form-row"><label>نوع الفلتر</label>
+            <select id="f-type">
+              <option value="air">فلتر هواء</option>
+              <option value="oil">فلتر زيت</option>
+              <option value="fuel">فلتر بنزين</option>
+              <option value="cabin">فلتر كابينة</option>
+              <option value="other">أخرى</option>
+            </select>
+          </div>
+          <div class="form-row"><label>تاريخ التغيير *</label><input id="f-date" type="date"></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-row"><label>الكيلومتراج *</label><input id="f-km" type="number" placeholder="65000"></div>
+          <div class="form-row"><label>التغيير القادم</label>
+            <select id="f-next">
+              <option value="10000">كل 10,000 كم</option>
+              <option value="15000">كل 15,000 كم</option>
+              <option value="20000" selected>كل 20,000 كم</option>
+              <option value="30000">كل 30,000 كم</option>
+              <option value="40000">كل 40,000 كم</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-row"><label>الماركة</label><input id="f-brand" placeholder="بوش / مان / فيلتروم"></div>
+          <div class="form-row"><label>التكلفة (جنيه)</label><input id="f-cost" type="number" placeholder="150"></div>
+        </div>
+        <div class="form-row"><label>الورشة</label><input id="f-workshop" placeholder="اسم الورشة"></div>
+        <div class="form-row"><label>ملاحظات</label><input id="f-notes" placeholder="أي تفاصيل"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" onclick="closeModal()">إلغاء</button>
+        <button class="btn btn-primary" onclick="saveFilter()">💾 حفظ</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="js/jquery.min.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    renderSidebar();
+
+    const TYPE_LABELS = { air: 'فلتر هواء', oil: 'فلتر زيت', fuel: 'فلتر بنزين', cabin: 'فلتر كابينة', other: 'أخرى' };
+
+    async function init() {
+      const { data: cars } = await get('/cars');
+      const opts = cars.map(c => `<option value="${c.id}">${c.plate} — ${c.make} ${c.model}</option>`).join('');
+      document.getElementById('f-car').innerHTML = '<option value="">اختر السيارة</option>' + opts;
+      document.getElementById('filter-car').innerHTML = '<option value="">كل السيارات</option>' + opts;
+      loadFilters();
+    }
+
+    async function loadFilters() {
+      const carId = document.getElementById('filter-car').value;
+      const type = document.getElementById('filter-type').value;
+      let qs = [];
+      if (carId) qs.push('car_id=' + carId);
+      if (type) qs.push('filter_type=' + type);
+      const { data: rows } = await get('/filters' + (qs.length ? '?' + qs.join('&') : ''));
+
+      const el = document.getElementById('filter-list');
+      if (!rows.length) {
+        el.innerHTML = `<div class="empty"><div class="empty-icon">🔧</div><h3>لا توجد سجلات</h3><p>سجل أول تغيير فلتر</p></div>`;
+        return;
+      }
+      el.innerHTML = rows.map(r => {
+        const lvl = kmLevel(r.km_remaining);
+        const pct = Math.max(0, Math.min(100, (1 - r.km_remaining / r.next_change_km) * 100));
+        const barColor = lvl === 'red' ? 'var(--red)' : lvl === 'orange' ? 'var(--orange)' : 'var(--green)';
+        return `<div class="maint-card">
+      <div class="maint-card-head">
+        <div>
+          <div class="maint-car">${r.plate}</div>
+          <div class="maint-type">🔧 ${TYPE_LABELS[r.filter_type] || r.filter_type} — ${r.make} ${r.model}</div>
+        </div>
+        ${badge(r.km_remaining < 0 ? 'متأخر' : r.km_remaining < 2000 ? 'قريباً' : 'سليم', lvl)}
+      </div>
+      <div class="maint-row"><span>تاريخ التغيير</span><span>${fmtDate(r.change_date)}</span></div>
+      <div class="maint-row"><span>عند الكيلومتر</span><span>${fmtKm(r.km_at_change)}</span></div>
+      <div class="maint-row"><span>التغيير القادم</span><span>${fmtKm(r.next_filter_at_km)}</span></div>
+      <div class="maint-row"><span>المتبقي</span><span style="color:${barColor}">${Number(r.km_remaining).toLocaleString()} كم</span></div>
+      ${r.brand ? `<div class="maint-row"><span>الماركة</span><span>${r.brand}</span></div>` : ''}
+      ${r.cost ? `<div class="maint-row"><span>التكلفة</span><span>${fmtCost(r.cost)}</span></div>` : ''}
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${barColor}"></div></div>
+      <button class="btn btn-danger btn-sm" style="width:100%;margin-top:10px;justify-content:center" onclick="deleteFilter(${r.id})">🗑️ حذف</button>
+    </div>`;
+      }).join('');
+    }
+
+    function openModal() {
+      document.getElementById('f-date').value = today();
+      ['km', 'cost', 'brand', 'workshop', 'notes'].forEach(k => document.getElementById('f-' + k).value = '');
+      document.getElementById('modal').classList.remove('hidden');
+    }
+    function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+
+    async function saveFilter() {
+      const body = {
+        car_id: document.getElementById('f-car').value,
+        filter_type: document.getElementById('f-type').value,
+        change_date: document.getElementById('f-date').value,
+        km_at_change: Number(document.getElementById('f-km').value),
+        next_change_km: Number(document.getElementById('f-next').value),
+        brand: document.getElementById('f-brand').value || null,
+        cost: document.getElementById('f-cost').value || null,
+        workshop: document.getElementById('f-workshop').value || null,
+        notes: document.getElementById('f-notes').value || null,
+      };
+      if (!body.car_id || !body.change_date || !body.km_at_change) return toast('يرجى ملء الحقول المطلوبة', 'error');
+      try {
+        await post('/filters', body);
+        toast('تم تسجيل تغيير الفلتر ✅');
+        closeModal(); loadFilters(); loadNavBadges();
+      } catch (e) { toast(e.message, 'error'); }
+    }
+
+    async function deleteFilter(id) {
+      if (!confirm('حذف هذا السجل؟')) return;
+      try { await del(`/filters/${id}`); toast('تم الحذف'); loadFilters(); }
+      catch (e) { toast(e.message, 'error'); }
+    }
+
+    document.getElementById('modal').addEventListener('click', e => { if (e.target === document.getElementById('modal')) closeModal(); });
+    init().catch(e => toast(e.message, 'error'));
+  </script>
+</body>
+
+</html>

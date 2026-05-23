@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>لوحة المتابعة — كار تراك</title>
+  <link rel="stylesheet" href="css/main.css">
+</head>
+
+<body>
+  <div class="app">
+    <div id="sidebar-mount"></div>
+    <div class="main">
+      <div class="topbar">
+        <div>
+          <div class="page-title">لوحة المتابعة</div>
+          <div class="page-sub" id="today-date"></div>
+        </div>
+        <a class="btn btn-primary" href="/cars">+ إضافة سيارة</a>
+      </div>
+      <div class="content">
+        <div class="stats-row" id="stats"></div>
+        <div id="alerts-section" style="margin-bottom:22px"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <h3 style="font-size:14px;font-weight:700">ملخص السيارات</h3>
+        </div>
+        <div class="table-wrap">
+          <div class="tbl-head" style="grid-template-columns:2fr 1.4fr 1.4fr 1.4fr 1.3fr 1fr">
+            <span>السيارة</span><span>آخر تغيير زيت</span><span>الزيت القادم</span><span>فلتر الهواء</span><span>انتهاء
+              الرخصة</span><span>الحالة</span>
+          </div>
+          <div id="cars-summary"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/sidebar.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    renderSidebar();
+
+    document.getElementById('today-date').textContent =
+      new Date().toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    async function loadDashboard() {
+      const [{ data: cars }, { data: expiring }] = await Promise.all([
+        get('/cars'),
+        get('/licenses/expiring?days=30')
+      ]);
+
+      // stats
+      let oilDue = 0, licDue = 0;
+      cars.forEach(c => {
+        const ol = c.next_oil_km != null ? c.next_oil_km - c.current_km : null;
+        if (ol !== null && ol <= 0) oilDue++;
+        const d = daysUntil(c.nearest_expiry);
+        if (d !== null && d <= 30) licDue++;
+      });
+
+      document.getElementById('stats').innerHTML = `
+    <div class="stat-card info">  <div class="stat-label">إجمالي السيارات</div><div class="stat-val">${cars.length}</div><div class="stat-sub">في الأسطول</div></div>
+    <div class="stat-card danger"><div class="stat-label">زيت متأخر</div><div class="stat-val">${oilDue}</div><div class="stat-sub">تحتاج تغيير فوري</div></div>
+    <div class="stat-card warn">  <div class="stat-label">رخص ستنتهي</div><div class="stat-val">${expiring.length}</div><div class="stat-sub">خلال 30 يوم</div></div>
+    <div class="stat-card ok">    <div class="stat-label">سليمة</div><div class="stat-val">${cars.length - oilDue - licDue < 0 ? 0 : cars.length - oilDue}</div><div class="stat-sub">بدون تنبيهات</div></div>
+  `;
+
+      // alerts
+      const alerts = [];
+      cars.forEach(c => {
+        const oilLeft = c.next_oil_km != null ? c.next_oil_km - c.current_km : null;
+        if (oilLeft !== null && oilLeft <= 1500) {
+          const lvl = oilLeft < 0 ? 'red' : 'orange';
+          alerts.push({ lvl, car: c, msg: oilLeft < 0 ? `زيت متأخر ${Math.abs(oilLeft).toLocaleString()} كم` : `تغيير زيت بعد ${oilLeft.toLocaleString()} كم` });
+        }
+        const d = daysUntil(c.nearest_expiry);
+        if (d !== null && d <= 14) {
+          alerts.push({ lvl: d < 0 ? 'red' : 'yellow', car: c, msg: `رخصة ${d < 0 ? 'منتهية منذ' : 'تنتهي خلال'} ${Math.abs(d)} يوم` });
+        }
+      });
+
+      const sec = document.getElementById('alerts-section');
+      if (alerts.length === 0) { sec.innerHTML = ''; return; }
+      sec.innerHTML = `<h3 style="font-size:14px;font-weight:700;margin-bottom:9px">⚠️ تنبيهات عاجلة</h3>` +
+        alerts.slice(0, 8).map(a => `
+      <div class="alert-item ${a.lvl}">
+        <div class="alert-dot ${a.lvl}"></div>
+        <span class="alert-car">${a.car.plate}</span>
+        <span class="alert-msg">${a.car.make} ${a.car.model} — ${a.msg}</span>
+        <span class="alert-tag ${a.lvl}">${a.lvl === 'red' ? '🚨 عاجل' : a.lvl === 'orange' ? '⚡ قريباً' : '⚠️ تنبيه'}</span>
+      </div>`).join('');
+
+      // cars table
+      document.getElementById('cars-summary').innerHTML = cars.length === 0
+        ? `<div class="empty"><div class="empty-icon">🚗</div><h3>لا توجد سيارات</h3><p>أضف سيارتك الأولى</p><a class="btn btn-primary" href="/cars">+ إضافة سيارة</a></div>`
+        : cars.map(c => {
+          const oilLeft = c.next_oil_km != null ? c.next_oil_km - c.current_km : null;
+          const d = daysUntil(c.nearest_expiry);
+          return `<div class="tbl-row" style="grid-template-columns:2fr 1.4fr 1.4fr 1.4fr 1.3fr 1fr">
+          <div><div style="font-weight:700">${c.plate}</div><div style="font-size:11px;color:var(--text2)">${c.make} ${c.model}</div></div>
+          <div>${c.last_oil_date ? fmtDate(c.last_oil_date) : badge('لم يُسجل', 'gray')}</div>
+          <div>${c.next_oil_km ? badge(fmtKm(c.next_oil_km), kmLevel(oilLeft)) : '—'}</div>
+          <div>${c.next_air_filter_km ? fmtKm(c.next_air_filter_km) : '—'}</div>
+          <div>${c.nearest_expiry ? badge(daysLabel(d), statusLevel(d)) : badge('غير مسجل', 'gray')}</div>
+          <div>${badge(oilLeft !== null && oilLeft < 0 ? 'صيانة' : d !== null && d < 0 ? 'رخصة منتهية' : 'سليمة', oilLeft !== null && oilLeft < 0 ? 'red' : d !== null && d < 0 ? 'red' : 'green')}</div>
+        </div>`;
+        }).join('');
+    }
+
+    loadDashboard().catch(e => toast(e.message, 'error'));
+  </script>
+</body>
+
+</html>

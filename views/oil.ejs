@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>تغيير الزيت — كار تراك</title>
+  <link rel="stylesheet" href="css/main.css" />
+</head>
+
+<body>
+  <div class="app">
+    <div id="sidebar-mount"></div>
+    <div class="main">
+      <div class="sm-menu">
+        <div class="sidebar-logo">
+          <div class="logo-icon">🚗</div>
+          <div class="text">
+            <h1>كار تراكر</h1>
+            <p>نظام متابعة السيارات</p>
+          </div>
+        </div>
+        <div class="bars">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+      <div class="topbar">
+        <div>
+          <div class="page-title">🛢️ تغيير الزيت</div>
+          <div class="page-sub">آخر سجل تغيير زيت لكل سيارة</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal()">
+          + تسجيل تغيير زيت
+        </button>
+      </div>
+      <div class="content">
+        <div id="due-section" style="margin-bottom: 20px"></div>
+        <div style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-bottom: 12px;
+            ">
+          <h3 style="font-size: 14px; font-weight: 700">آخر سجل لكل سيارة</h3>
+          <select id="filter-car" onchange="loadOil()" style="
+                background: var(--bg3);
+                border: 1px solid var(--border2);
+                border-radius: var(--radius2);
+                padding: 6px 10px;
+                font-family: Cairo, sans-serif;
+                font-size: 12px;
+                color: var(--text);
+                outline: none;
+              ">
+            <option value="">كل السيارات</option>
+          </select>
+        </div>
+        <div class="maint-grid" id="oil-list">
+          <div class="loading">جاري التحميل...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay hidden" id="modal">
+    <div class="modal">
+      <div class="modal-head">
+        <h2>🛢️ تسجيل تغيير زيت</h2>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <label>السيارة *</label><select id="f-car">
+            <option value="">اختر السيارة</option>
+          </select>
+        </div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label>تاريخ التغيير *</label><input id="f-date" type="date" />
+          </div>
+          <div class="form-row">
+            <label>الكيلومتراج عند التغيير *</label><input id="f-km" type="number" placeholder="65000" />
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label>الكيلومتر القادم</label>
+            <select id="f-next">
+              <option value="2500" selected>كل 2,500 كم</option>
+              <option value="5000">كل 5,000 كم</option>
+              <option value="7500">كل 7,500 كم</option>
+              <option value="10000">كل 10,000 كم</option>
+              <option value="15000">كل 15,000 كم</option>
+              <option value="20000">كل 20,000 كم</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>التكلفة (جنيه)</label><input id="f-cost" type="number" placeholder="400" />
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label>ماركة الزيت</label><input id="f-brand" placeholder="موبيل 1 / كاسترول" />
+          </div>
+          <div class="form-row">
+            <label>درجة الزيت</label><input id="f-grade" placeholder="5W-30" />
+          </div>
+        </div>
+        <div class="form-row">
+          <label>الورشة</label><input id="f-workshop" placeholder="اسم الورشة" />
+        </div>
+        <div class="form-row">
+          <label>ملاحظات</label><input id="f-notes" placeholder="أي تفاصيل إضافية" />
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" onclick="closeModal()">إلغاء</button>
+        <button class="btn btn-primary" onclick="saveOil()">💾 حفظ</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="js/jquery.min.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    renderSidebar();
+
+    async function init() {
+      const { data: cars } = await get("/cars");
+      const sel1 = document.getElementById("f-car");
+      const sel2 = document.getElementById("filter-car");
+      const opts = cars
+        .map(
+          (c) =>
+            `<option value="${c.id}">${c.plate} — ${c.make} ${c.model}</option>`,
+        )
+        .join("");
+      sel1.innerHTML = '<option value="">اختر السيارة</option>' + opts;
+      sel2.innerHTML = '<option value="">كل السيارات</option>' + opts;
+      loadOil();
+    }
+
+    async function loadOil() {
+      const carId = document.getElementById("filter-car").value;
+      const qs = carId ? `?car_id=${carId}` : "";
+      const { data: rows } = await get("/oil" + qs);
+
+      // due section
+      const due = rows.filter((r) => r.km_remaining <= 1500);
+      const dueEl = document.getElementById("due-section");
+      if (due.length) {
+        dueEl.innerHTML =
+          `<h3 style="font-size:14px;font-weight:700;margin-bottom:9px">⚠️ تحتاج تغيير زيت قريباً</h3>` +
+          due
+            .map((r) => {
+              const lvl = r.km_remaining < 0 ? "red" : "orange";
+              return `<div class="alert-item ${lvl}">
+          <div class="alert-dot ${lvl}"></div>
+          <span class="alert-car">${r.plate}</span>
+          <span class="alert-msg">${r.make} ${r.model} — الكيلومتر القادم ${fmtKm(r.next_oil_at_km)}</span>
+          <span class="alert-tag ${lvl}">${r.km_remaining < 0 ? "متأخر " + Math.abs(r.km_remaining).toLocaleString() + " كم" : "باقي " + r.km_remaining.toLocaleString() + " كم"}</span>
+        </div>`;
+            })
+            .join("");
+      } else dueEl.innerHTML = "";
+
+      // list
+      const el = document.getElementById("oil-list");
+      if (!rows.length) {
+        el.innerHTML = `<div class="empty"><div class="empty-icon">🛢️</div><h3>لا توجد سجلات</h3><p>سجل أول تغيير زيت</p></div>`;
+        return;
+      }
+      el.innerHTML = rows
+        .map((r) => {
+          const lvl = kmLevel(r.km_remaining);
+          const pct = Math.max(
+            0,
+            Math.min(100, (1 - r.km_remaining / r.next_change_km) * 100),
+          );
+          const barColor =
+            lvl === "red"
+              ? "var(--red)"
+              : lvl === "orange"
+                ? "var(--orange)"
+                : "var(--green)";
+          return `<div class="maint-card">
+      <div class="maint-card-head">
+        <div><div class="maint-car">${r.plate}</div><div class="maint-type">🛢️ ${r.make} ${r.model}</div></div>
+        ${badge(r.km_remaining < 0 ? "متأخر" : r.km_remaining < 1500 ? "قريباً" : "سليم", lvl)}
+      </div>
+      <div class="maint-row"><span>تاريخ التغيير</span><span>${fmtDate(r.change_date)}</span></div>
+      <div class="maint-row"><span>عند الكيلومتر</span><span>${fmtKm(r.km_at_change)}</span></div>
+      <div class="maint-row"><span>التغيير القادم</span><span>${fmtKm(r.next_oil_at_km)}</span></div>
+      <div class="maint-row"><span>الكيلومتر الحالي</span><span>${fmtKm(r.current_km)}</span></div>
+      <div class="maint-row"><span>المتبقي</span><span style="color:${barColor}">${r.km_remaining < 0 ? "⚠️ " : ""}${Number(r.km_remaining).toLocaleString()} كم</span></div>
+      ${r.oil_brand ? `<div class="maint-row"><span>نوع الزيت</span><span>${r.oil_brand} ${r.oil_grade || ""}</span></div>` : ""}
+      ${r.cost ? `<div class="maint-row"><span>التكلفة</span><span>${fmtCost(r.cost)}</span></div>` : ""}
+      ${r.workshop ? `<div class="maint-row"><span>الورشة</span><span>${r.workshop}</span></div>` : ""}
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${barColor}"></div></div>
+      <button class="btn btn-danger btn-sm" style="width:100%;margin-top:10px;justify-content:center" onclick="deleteOil(${r.id})">🗑️ حذف</button>
+    </div>`;
+        })
+        .join("");
+    }
+
+    function openModal() {
+      document.getElementById("f-date").value = today();
+      ["km", "cost", "brand", "grade", "workshop", "notes"].forEach(
+        (k) => (document.getElementById("f-" + k).value = ""),
+      );
+      document.getElementById("modal").classList.remove("hidden");
+    }
+    function closeModal() {
+      document.getElementById("modal").classList.add("hidden");
+    }
+
+    async function saveOil() {
+      const body = {
+        car_id: document.getElementById("f-car").value,
+        change_date: document.getElementById("f-date").value,
+        km_at_change: Number(document.getElementById("f-km").value),
+        next_change_km: Number(document.getElementById("f-next").value),
+        oil_brand: document.getElementById("f-brand").value || null,
+        oil_grade: document.getElementById("f-grade").value || null,
+        cost: document.getElementById("f-cost").value || null,
+        workshop: document.getElementById("f-workshop").value || null,
+        notes: document.getElementById("f-notes").value || null,
+      };
+      if (!body.car_id || !body.change_date || !body.km_at_change)
+        return toast("يرجى ملء الحقول المطلوبة", "error");
+      try {
+        await post("/oil", body);
+        toast("تم تسجيل تغيير الزيت ✅");
+        closeModal();
+        loadOil();
+        loadNavBadges();
+      } catch (e) {
+        toast(e.message, "error");
+      }
+    }
+
+    async function deleteOil(id) {
+      if (!confirm("حذف هذا السجل؟")) return;
+      try {
+        await del(`/oil/${id}`);
+        toast("تم الحذف");
+        loadOil();
+      } catch (e) {
+        toast(e.message, "error");
+      }
+    }
+
+    document.getElementById("modal").addEventListener("click", (e) => {
+      if (e.target === document.getElementById("modal")) closeModal();
+    });
+    init().catch((e) => toast(e.message, "error"));
+  </script>
+</body>
+
+</html>

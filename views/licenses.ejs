@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>الرخص — كار تراك</title>
+  <link rel="stylesheet" href="css/main.css">
+</head>
+
+<body>
+  <div class="app">
+    <div id="sidebar-mount"></div>
+    <div class="main">
+      <div class="sm-menu">
+        <div class="sidebar-logo">
+          <div class="logo-icon">🚗</div>
+          <div class="text">
+            <h1>كار تراكر</h1>
+            <p>نظام متابعة السيارات</p>
+          </div>
+        </div>
+        <div class="bars">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+      <div class="topbar">
+        <div>
+          <div class="page-title">📋 الرخص والوثائق</div>
+          <div class="page-sub">رخص التشغيل والتأمين والفحص الدوري</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal()">+ إضافة وثيقة</button>
+      </div>
+      <div class="content">
+        <div id="expiring-section" style="margin-bottom:20px"></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+          <h3 style="font-size:14px;font-weight:700;flex:1">كل الوثائق</h3>
+          <select id="filter-car" onchange="loadLicenses()"
+            style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius2);padding:7px 11px;font-family:Cairo,sans-serif;font-size:12px;color:var(--text);outline:none">
+            <option value="">كل السيارات</option>
+          </select>
+        </div>
+        <div class="maint-grid" id="lic-list">
+          <div class="loading">جاري التحميل...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay hidden" id="modal">
+    <div class="modal">
+      <div class="modal-head">
+        <h2>📋 إضافة / تجديد وثيقة</h2><button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row"><label>السيارة *</label><select id="f-car">
+            <option value="">اختر السيارة</option>
+          </select></div>
+        <div class="form-grid">
+          <div class="form-row"><label>نوع الوثيقة</label>
+            <select id="f-type">
+              <option value="license">رخصة تشغيل</option>
+              <option value="insurance">تأمين</option>
+              <option value="inspection">فحص دوري</option>
+              <option value="ownership">ترخيص ملكية</option>
+              <option value="other">أخرى</option>
+            </select>
+          </div>
+          <div class="form-row"><label>رقم الوثيقة</label><input id="f-num" placeholder="رقم الرخصة"></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-row"><label>تاريخ الإصدار *</label><input id="f-issue" type="date"></div>
+          <div class="form-row"><label>تاريخ الانتهاء *</label><input id="f-expiry" type="date"></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-row"><label>التكلفة (جنيه)</label><input id="f-cost" type="number" placeholder="1500"></div>
+          <div class="form-row"><label>جهة الإصدار</label><input id="f-issuer" placeholder="المرور / الشركة"></div>
+        </div>
+        <div class="form-row"><label>ملاحظات</label><input id="f-notes" placeholder="أي ملاحظات"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" onclick="closeModal()">إلغاء</button>
+        <button class="btn btn-primary" onclick="saveLic()">💾 حفظ</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="js/jquery.min.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    renderSidebar();
+
+    const TYPE_LABELS = { license: 'رخصة تشغيل', insurance: 'تأمين', inspection: 'فحص دوري', ownership: 'ترخيص ملكية', other: 'أخرى' };
+    const TYPE_ICONS = { license: '📋', insurance: '🛡️', inspection: '🔍', ownership: '📄', other: '📎' };
+
+    async function init() {
+      const { data: cars } = await get('/cars');
+      const opts = cars.map(c => `<option value="${c.id}">${c.plate} — ${c.make} ${c.model}</option>`).join('');
+      document.getElementById('f-car').innerHTML = '<option value="">اختر السيارة</option>' + opts;
+      document.getElementById('filter-car').innerHTML = '<option value="">كل السيارات</option>' + opts;
+      loadLicenses();
+    }
+
+    async function loadLicenses() {
+      const carId = document.getElementById('filter-car').value;
+      const qs = carId ? `?car_id=${carId}` : '';
+      const [{ data: rows }, { data: expiring }] = await Promise.all([
+        get('/licenses' + qs),
+        get('/licenses/expiring?days=30'),
+      ]);
+
+      // expiring alert
+      const expSec = document.getElementById('expiring-section');
+      if (expiring.length) {
+        expSec.innerHTML = `<h3 style="font-size:14px;font-weight:700;margin-bottom:9px">⚠️ وثائق ستنتهي أو منتهية</h3>` +
+          expiring.map(l => {
+            const d = l.days_remaining;
+            const lvl = d < 0 ? 'red' : d < 7 ? 'red' : 'yellow';
+            return `<div class="alert-item ${lvl}">
+          <div class="alert-dot ${lvl}"></div>
+          <span class="alert-car">${l.plate}</span>
+          <span class="alert-msg">${l.make} ${l.model} — ${TYPE_LABELS[l.doc_type] || l.doc_type}</span>
+          <span class="alert-tag ${lvl}">${d < 0 ? 'منتهية منذ ' + Math.abs(d) + ' يوم' : 'تنتهي خلال ' + d + ' يوم'}</span>
+        </div>`;
+          }).join('');
+      } else expSec.innerHTML = '';
+
+      // list
+      const el = document.getElementById('lic-list');
+      if (!rows.length) {
+        el.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><h3>لا توجد وثائق</h3><p>أضف أول وثيقة</p></div>`;
+        return;
+      }
+      el.innerHTML = rows.map(r => {
+        const d = r.days_remaining;
+        const lvl = d < 0 ? 'red' : d < 7 ? 'red' : d < 30 ? 'yellow' : 'green';
+        const lbl = d < 0 ? 'منتهية' : d < 30 ? 'قريباً' : 'سارية';
+        return `<div class="maint-card">
+      <div class="maint-card-head">
+        <div>
+          <div class="maint-car">${r.plate}</div>
+          <div class="maint-type">${TYPE_ICONS[r.doc_type] || '📋'} ${TYPE_LABELS[r.doc_type] || r.doc_type} — ${r.make} ${r.model}</div>
+        </div>
+        ${badge(lbl, lvl)}
+      </div>
+      <div class="maint-row"><span>تاريخ الإصدار</span><span>${fmtDate(r.issue_date)}</span></div>
+      <div class="maint-row"><span>تاريخ الانتهاء</span><span>${fmtDate(r.expiry_date)}</span></div>
+      <div class="maint-row"><span>المتبقي</span><span style="color:${lvl === 'red' ? 'var(--red)' : lvl === 'yellow' ? 'var(--yellow)' : 'var(--green)'}">${daysLabel(d)}</span></div>
+      ${r.doc_number ? `<div class="maint-row"><span>رقم الوثيقة</span><span>${r.doc_number}</span></div>` : ''}
+      ${r.cost ? `<div class="maint-row"><span>التكلفة</span><span>${fmtCost(r.cost)}</span></div>` : ''}
+      ${r.issuer ? `<div class="maint-row"><span>جهة الإصدار</span><span>${r.issuer}</span></div>` : ''}
+      <button class="btn btn-danger btn-sm" style="width:100%;margin-top:10px;justify-content:center" onclick="deleteLic(${r.id})">🗑️ حذف</button>
+    </div>`;
+      }).join('');
+    }
+
+    function openModal() {
+      document.getElementById('f-issue').value = today();
+      ['expiry', 'num', 'cost', 'issuer', 'notes'].forEach(k => document.getElementById('f-' + k).value = '');
+      document.getElementById('modal').classList.remove('hidden');
+    }
+    function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+
+    async function saveLic() {
+      const body = {
+        car_id: document.getElementById('f-car').value,
+        doc_type: document.getElementById('f-type').value,
+        doc_number: document.getElementById('f-num').value || null,
+        issue_date: document.getElementById('f-issue').value,
+        expiry_date: document.getElementById('f-expiry').value,
+        cost: document.getElementById('f-cost').value || null,
+        issuer: document.getElementById('f-issuer').value || null,
+        notes: document.getElementById('f-notes').value || null,
+      };
+      if (!body.car_id || !body.issue_date || !body.expiry_date) return toast('يرجى ملء الحقول المطلوبة', 'error');
+      try {
+        await post('/licenses', body);
+        toast('تم إضافة الوثيقة ✅');
+        closeModal(); loadLicenses(); loadNavBadges();
+      } catch (e) { toast(e.message, 'error'); }
+    }
+
+    async function deleteLic(id) {
+      if (!confirm('حذف هذه الوثيقة؟')) return;
+      try { await del(`/licenses/${id}`); toast('تم الحذف'); loadLicenses(); }
+      catch (e) { toast(e.message, 'error'); }
+    }
+
+    document.getElementById('modal').addEventListener('click', e => { if (e.target === document.getElementById('modal')) closeModal(); });
+    init().catch(e => toast(e.message, 'error'));
+  </script>
+</body>
+
+</html>
