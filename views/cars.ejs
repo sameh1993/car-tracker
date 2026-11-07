@@ -148,9 +148,13 @@
     }
 
     async function deleteCar(id) {
-      if (!confirm('حذف السيارة وكل سجلاتها؟')) return;
-      try { await del(`/cars/${id}`); toast('تم الحذف'); loadCars(); }
-      catch (e) { toast(e.message, 'error'); }
+      if (!confirm('حذف السيارة نهائيًا مع كل سجلاتها؟\nهيتم حذف تغييرات الزيت والفلاتر والرخص وقراءات العداد والتقارير الخاصة بها من النظام كله.\nلا يمكن التراجع.')) return;
+      try {
+        const res = await del(`/cars/${id}`);
+        toast(res.message || 'تم الحذف');
+        loadCars();
+        loadNavBadges();
+      } catch (e) { toast(e.message, 'error'); }
     }
 
     document.getElementById('modal').addEventListener('click', e => { if (e.target === document.getElementById('modal')) closeModal(); });

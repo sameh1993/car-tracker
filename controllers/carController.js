@@ -62,8 +62,24 @@ const carController = {
 
   // DELETE /api/cars/:id
   remove: async (req, res) => {
-    await CarModel.hardDelete(req.params.id);
-    res.json({ success: true, message: 'تم حذف السيارة' });
+    const deleted = await CarModel.hardDelete(req.params.id);
+
+    const labels = {
+      oil_changes:     'تغيير زيت',
+      filter_changes:  'تغيير فلتر',
+      licenses:        'وثيقة/رخصة',
+      odometer_logs:   'قراءة عداد',
+    };
+    const parts = Object.entries(deleted)
+      .map(([table, count]) => `${count} ${labels[table] || table}`);
+
+    res.json({
+      success: true,
+      message: parts.length
+        ? `تم حذف السيارة وكل سجلاتها (${parts.join('، ')})`
+        : 'تم حذف السيارة',
+      deleted,
+    });
   },
 };
 

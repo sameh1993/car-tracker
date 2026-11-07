@@ -4,7 +4,7 @@ const FilterModel = {
 
   // كل تغييرات الفلاتر مع فلاتر اختيارية
   async findAll({ carId = null, filterType = null, from = null, to = null } = {}) {
-    const conditions = ['1=1'];
+    const conditions = ['c.is_active = 1'];
     const params     = [];
 
     if (carId)      { conditions.push('f.car_id = ?');       params.push(carId); }
@@ -15,8 +15,13 @@ const FilterModel = {
     const [rows] = await pool.query(`
       SELECT
         f.*, c.plate, c.make, c.model, c.current_km,
-        (f.km_at_change + f.next_change_km)                        AS next_filter_at_km,
-        (f.km_at_change + f.next_change_km - c.current_km)        AS km_remaining
+        (CAST(f.km_at_change AS SIGNED) + CAST(f.next_change_km AS SIGNED))
+          AS next_filter_at_km,
+        (
+          CAST(f.km_at_change AS SIGNED)
+          + CAST(f.next_change_km AS SIGNED)
+          - CAST(c.current_km AS SIGNED)
+        ) AS km_remaining
       FROM filter_changes f
       JOIN cars c ON c.id = f.car_id
       WHERE ${conditions.join(' AND ')}

@@ -71,5 +71,5 @@ const PORT = process.env.PORT || 3000;
 // mysql://root:uMbwdbOeMTJWkcyHvfEKaHhXpgqYXOdL@roundhouse.proxy.rlwy.net:12340/railway
 
 app.listen(PORT, () => {
-  console.log(`\n🚗  Car Tracker (MVC) شغال على http://localhost:${PORT}\n`);
+  console.log(`Car Tracker (MVC) شغال على http://localhost:${PORT}\n`);
 });

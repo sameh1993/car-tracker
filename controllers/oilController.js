@@ -26,6 +26,24 @@ const oilController = {
       });
     }
 
+    // قراءة العداد لازم تكون ≥ آخر قراءة مسجلة لتغيير الزيت لنفس السيارة
+    const lastOil = await OilModel.findLastByCar(car_id);
+    if (lastOil && Number(km_at_change) < Number(lastOil.km_at_change)) {
+      const lastDate =
+        lastOil.change_date instanceof Date
+          ? lastOil.change_date.toISOString().slice(0, 10)
+          : String(lastOil.change_date).slice(0, 10);
+
+      return res.status(400).json({
+        success: false,
+        message:
+          `قراءة العداد (${Number(km_at_change).toLocaleString('ar-EG')} كم) ` +
+          `لازم تكون أكبر من أو تساوي آخر قراءة لتغيير الزيت ` +
+          `(${Number(lastOil.km_at_change).toLocaleString('ar-EG')} كم). ` +
+          `آخر تغيير كان بتاريخ ${lastDate}.`,
+      });
+    }
+
     const insertId = await OilModel.create(req.body);
 
     // تحديث الكيلومتراج + تسجيل قراءة عداد تلقائية

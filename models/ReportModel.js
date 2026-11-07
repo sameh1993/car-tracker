@@ -58,6 +58,7 @@ const ReportModel = {
         SELECT o.*, c.plate, c.make, c.model
         FROM   oil_changes o JOIN cars c ON c.id = o.car_id
         WHERE  o.change_date BETWEEN ? AND ?
+          AND  c.is_active = 1
         ORDER  BY o.change_date DESC
       `, [start, end]).then(([r]) => r),
 
@@ -65,6 +66,7 @@ const ReportModel = {
         SELECT f.*, c.plate, c.make, c.model
         FROM   filter_changes f JOIN cars c ON c.id = f.car_id
         WHERE  f.change_date BETWEEN ? AND ?
+          AND  c.is_active = 1
         ORDER  BY f.change_date DESC
       `, [start, end]).then(([r]) => r),
 
@@ -73,6 +75,7 @@ const ReportModel = {
           DATEDIFF(l.expiry_date, CURDATE()) AS days_remaining
         FROM   licenses l JOIN cars c ON c.id = l.car_id
         WHERE  l.issue_date BETWEEN ? AND ?
+          AND  c.is_active = 1
         ORDER  BY l.issue_date DESC
       `, [start, end]).then(([r]) => r),
 
@@ -115,6 +118,7 @@ const ReportModel = {
         FROM   odometer_logs o JOIN cars c ON c.id = o.car_id
         WHERE  o.reading_date BETWEEN ? AND ?
           AND  o.source = 'manual'
+          AND  c.is_active = 1
         ORDER  BY o.reading_date DESC
       `, [start, end]).then(([r]) => r),
 
@@ -124,11 +128,17 @@ const ReportModel = {
           COALESCE(SUM(CASE WHEN tbl='filter'  THEN cost END),0) AS filter_cost,
           COALESCE(SUM(CASE WHEN tbl='license' THEN cost END),0) AS license_cost
         FROM (
-          SELECT 'oil'    AS tbl, cost, change_date AS d FROM oil_changes    WHERE change_date BETWEEN ? AND ?
+          SELECT 'oil'    AS tbl, cost, change_date AS d FROM oil_changes
+            WHERE change_date BETWEEN ? AND ?
+              AND car_id IN (SELECT id FROM cars WHERE is_active = 1)
           UNION ALL
-          SELECT 'filter',        cost, change_date        FROM filter_changes WHERE change_date BETWEEN ? AND ?
+          SELECT 'filter',        cost, change_date        FROM filter_changes
+            WHERE change_date BETWEEN ? AND ?
+              AND car_id IN (SELECT id FROM cars WHERE is_active = 1)
           UNION ALL
-          SELECT 'license',       cost, issue_date         FROM licenses       WHERE issue_date  BETWEEN ? AND ?
+          SELECT 'license',       cost, issue_date         FROM licenses
+            WHERE issue_date  BETWEEN ? AND ?
+              AND car_id IN (SELECT id FROM cars WHERE is_active = 1)
         ) t
       `, [start, end, start, end, start, end]).then(([r]) => r),
     ]);
@@ -270,6 +280,7 @@ const ReportModel = {
           FROM oil_changes o
           JOIN cars c ON c.id = o.car_id
           WHERE o.change_date BETWEEN ? AND ?
+            AND c.is_active = 1
           ORDER BY c.plate ASC, o.change_date ASC
         `, [start, end]).then(([r]) => r),
 
@@ -282,6 +293,7 @@ const ReportModel = {
           FROM filter_changes f
           JOIN cars c ON c.id = f.car_id
           WHERE f.change_date BETWEEN ? AND ?
+            AND c.is_active = 1
           ORDER BY c.plate ASC, f.change_date ASC
         `, [start, end]).then(([r]) => r),
 
@@ -313,9 +325,13 @@ const ReportModel = {
             COUNT(CASE WHEN src='oil'    THEN 1 END)               AS oil_count,
             COUNT(CASE WHEN src='filter' THEN 1 END)               AS filter_count
           FROM (
-            SELECT COALESCE(cost,0) AS cost, 'oil'    AS src FROM oil_changes    WHERE change_date BETWEEN ? AND ?
+            SELECT COALESCE(cost,0) AS cost, 'oil'    AS src FROM oil_changes
+              WHERE change_date BETWEEN ? AND ?
+                AND car_id IN (SELECT id FROM cars WHERE is_active = 1)
             UNION ALL
-            SELECT COALESCE(cost,0),          'filter'        FROM filter_changes WHERE change_date BETWEEN ? AND ?
+            SELECT COALESCE(cost,0),          'filter'        FROM filter_changes
+              WHERE change_date BETWEEN ? AND ?
+                AND car_id IN (SELECT id FROM cars WHERE is_active = 1)
           ) t
         `, [start, end, start, end]).then(([r]) => r),
       ]);
@@ -484,7 +500,7 @@ const ReportModel = {
           l.doc_type, l.doc_number
         FROM licenses l
       ) t
-      JOIN cars c ON c.id = t.car_id
+      JOIN cars c ON c.id = t.car_id AND c.is_active = 1
       ${whereSql}
       ORDER BY t.change_date DESC, t.id DESC
     `, params);

@@ -4,7 +4,9 @@ const OilModel = {
 
   // آخر تغيير زيت لكل سيارة (مع فلتر اختياري بالسيارة)
   async findAll(carId = null) {
-    const where  = carId ? 'WHERE o.car_id = ?' : '';
+    const where  = carId
+      ? 'WHERE c.is_active = 1 AND o.car_id = ?'
+      : 'WHERE c.is_active = 1';
     const params = carId ? [carId] : [];
     const [rows] = await pool.query(`
       SELECT
@@ -32,6 +34,17 @@ const OilModel = {
       ORDER BY o.change_date DESC, o.id DESC
     `, params);
     return rows;
+  },
+
+  // آخر تغيير زيت لسيارة واحدة (للمقارنة قبل تسجيل تغيير جديد)
+  async findLastByCar(carId) {
+    const [[row]] = await pool.query(`
+      SELECT * FROM oil_changes
+      WHERE car_id = ?
+      ORDER BY change_date DESC, id DESC
+      LIMIT 1
+    `, [carId]);
+    return row || null;
   },
 
   // السيارات اللي الزيت بتاعها قارب ينتهي (متبقي ≤ 2000 كم)

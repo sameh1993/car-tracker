@@ -4,7 +4,9 @@ const LicenseModel = {
 
   // كل الوثائق (مع فلتر اختياري)
   async findAll(carId = null) {
-    const where  = carId ? 'WHERE l.car_id = ?' : '';
+    const where  = carId
+      ? 'WHERE c.is_active = 1 AND l.car_id = ?'
+      : 'WHERE c.is_active = 1';
     const params = carId ? [carId] : [];
     const [rows] = await pool.query(`
       SELECT

@@ -73,7 +73,7 @@
       </div>
       <div class="modal-body">
         <div class="form-row">
-          <label>السيارة *</label><select id="f-car">
+          <label>السيارة *</label><select id="f-car" onchange="onOilCarChange()">
             <option value="">اختر السيارة</option>
           </select>
         </div>
@@ -82,7 +82,8 @@
             <label>تاريخ التغيير *</label><input id="f-date" type="date" />
           </div>
           <div class="form-row">
-            <label>الكيلومتراج عند التغيير *</label><input id="f-km" type="number" placeholder="65000" />
+            <label>الكيلومتراج عند التغيير *</label><input id="f-km" type="number" placeholder="65000" oninput="validateOilKm()" />
+            <div id="oil-km-hint" style="font-size:11px;margin-top:4px;min-height:16px;color:var(--text3)"></div>
           </div>
         </div>
         <div class="form-grid">
@@ -129,6 +130,78 @@
   <script src="js/utils.js"></script>
   <script>
     renderSidebar();
+
+    // آخر تغيير زيت للسيارة المختارة (لمقارنة القراءة الجديدة)
+    let lastOilForCar = null;
+
+    const oilKmHint = () => document.getElementById("oil-km-hint");
+    const oilKmInput = () => document.getElementById("f-km");
+
+    async function onOilCarChange() {
+      lastOilForCar = null;
+      const carId = document.getElementById("f-car").value;
+      const input = oilKmInput();
+      const hint = oilKmHint();
+
+      input.style.borderColor = "";
+      input.removeAttribute("min");
+
+      if (!carId) {
+        hint.textContent = "";
+        return;
+      }
+
+      hint.textContent = "جاري تحميل آخر قراءة...";
+      hint.style.color = "var(--text3)";
+
+      try {
+        const { data } = await get("/oil?car_id=" + carId);
+        lastOilForCar = data && data.length ? data[0] : null;
+      } catch (_) {
+        lastOilForCar = null;
+      }
+
+      if (lastOilForCar) {
+        input.min = lastOilForCar.km_at_change;
+        hint.textContent = `آخر قراءة لتغيير الزيت: ${fmtKm(lastOilForCar.km_at_change)} — ${fmtDate(lastOilForCar.change_date)}`;
+      } else {
+        hint.textContent = "لا يوجد تغيير زيت سابق لهذه السيارة";
+      }
+      hint.style.color = "var(--text3)";
+      validateOilKm();
+    }
+
+    // القراءة الجديدة لازم تكون ≥ آخر قراءة تغيير زيت
+    function validateOilKm() {
+      const input = oilKmInput();
+      const hint = oilKmHint();
+      if (!lastOilForCar || !input.value) return true;
+
+      const val = Number(input.value);
+      const last = Number(lastOilForCar.km_at_change);
+
+      if (val < last) {
+        input.style.borderColor = "var(--red)";
+        hint.textContent = `❌ القراءة لازم تكون أكبر من أو تساوي ${fmtKm(last)} (آخر تغيير زيت)`;
+        hint.style.color = "var(--red)";
+        return false;
+      }
+
+      input.style.borderColor = "var(--green)";
+      hint.textContent = `✅ القراءة أكبر من آخر تغيير بـ ${(val - last).toLocaleString("ar-EG")} كم`;
+      hint.style.color = "var(--green)";
+      return true;
+    }
+
+    function resetOilKm() {
+      lastOilForCar = null;
+      const input = oilKmInput();
+      const hint = oilKmHint();
+      input.style.borderColor = "";
+      input.removeAttribute("min");
+      hint.textContent = "";
+      hint.style.color = "var(--text3)";
+    }
 
     async function init() {
       const { data: cars } = await get("/cars");
@@ -213,6 +286,9 @@
       ["km", "cost", "brand", "grade", "workshop", "notes"].forEach(
         (k) => (document.getElementById("f-" + k).value = ""),
       );
+      resetOilKm();
+      const selectedCar = document.getElementById("f-car").value;
+      if (selectedCar) onOilCarChange();
       document.getElementById("modal").classList.remove("hidden");
     }
     function closeModal() {
@@ -233,10 +309,30 @@
       };
       if (!body.car_id || !body.change_date || !body.km_at_change)
         return toast("يرجى ملء الحقول المطلوبة", "error");
+
+      // تأكد إن آخر قراءة تغيير زيت للسيارة محمّلة
+      if (!lastOilForCar || String(lastOilForCar.car_id) !== String(body.car_id)) {
+        try {
+          const { data } = await get("/oil?car_id=" + body.car_id);
+          lastOilForCar = data && data.length ? data[0] : null;
+        } catch (_) {
+          lastOilForCar = null;
+        }
+      }
+
+      if (lastOilForCar && Number(body.km_at_change) < Number(lastOilForCar.km_at_change)) {
+        validateOilKm();
+        return toast(
+          `القراءة لازم تكون أكبر من أو تساوي ${fmtKm(lastOilForCar.km_at_change)} (آخر تغيير زيت)`,
+          "error",
+        );
+      }
+
       try {
         await post("/oil", body);
         toast("تم تسجيل تغيير الزيت ✅");
         closeModal();
+        resetOilKm();
         loadOil();
         loadNavBadges();
       } catch (e) {
