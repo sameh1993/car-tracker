@@ -54,26 +54,47 @@ const CarModel = {
     return this.findById(id);
   },
 
-  // حذف فعلي مع تنظيف السجلات التابعة
+  // حذف فعلي مع تنظيف كل السجلات التابعة في أي جدول مرتبط بالسيارات
+  // (الزيت، الفلاتر، الرخص، قراءات العداد، وأي جدول جديد بيفضل مربوط بـ cars)
   async hardDelete(id) {
     const conn = await pool.getConnection();
     try {
       await conn.beginTransaction();
 
-      await conn.query('DELETE FROM odometer_logs WHERE car_id = ?', [id]);
-      await conn.query('DELETE FROM oil_changes WHERE car_id = ?', [id]);
-      await conn.query('DELETE FROM filter_changes WHERE car_id = ?', [id]);
-      await conn.query('DELETE FROM licenses WHERE car_id = ?', [id]);
-
-      const [result] = await conn.query('DELETE FROM cars WHERE id = ?', [id]);
-      if (!result.affectedRows) {
+      // تأكد إن السيارة موجودة قبل الحذف
+      const [[car]] = await conn.query('SELECT id FROM cars WHERE id = ?', [id]);
+      if (!car) {
         const err = new Error('السيارة غير موجودة');
         err.statusCode = 404;
         throw err;
       }
 
+      // اكتشف تلقائيًا كل الجداول اللي فيها مفتاح أجنبي بيشاور على cars
+      const [refs] = await conn.query(`
+        SELECT TABLE_NAME AS tableName, COLUMN_NAME AS columnName
+        FROM information_schema.KEY_COLUMN_USAGE
+        WHERE REFERENCED_TABLE_SCHEMA = DATABASE()
+          AND REFERENCED_TABLE_NAME  = 'cars'
+          AND TABLE_NAME <> 'cars'
+        GROUP BY TABLE_NAME, COLUMN_NAME
+        ORDER BY TABLE_NAME
+      `);
+
+      // احذف سجلات السيارة من كل الجداول المرتبطة
+      const deleted = {};
+      for (const { tableName, columnName } of refs) {
+        const [result] = await conn.query(
+          `DELETE FROM \`${tableName}\` WHERE \`${columnName}\` = ?`,
+          [id]
+        );
+        if (result.affectedRows) deleted[tableName] = result.affectedRows;
+      }
+
+      // احذف السيارة نفسها
+      await conn.query('DELETE FROM cars WHERE id = ?', [id]);
+
       await conn.commit();
-      return true;
+      return deleted;
     } catch (err) {
       await conn.rollback();
       throw err;

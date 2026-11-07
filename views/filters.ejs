@@ -6,6 +6,129 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>الفلاتر — كار تراك</title>
   <link rel="stylesheet" href="css/main.css">
+  <style>
+    /* ===== بطاقة الفلاتر ===== */
+    .filters-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 14px;
+    }
+
+    .filters-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+    }
+
+    .filter-field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .filter-field label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text2);
+    }
+
+    .filter-field select,
+    .filter-field input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius2);
+      padding: 8px 12px;
+      font-family: "Cairo", sans-serif;
+      font-size: 13px;
+      color: var(--text);
+      outline: none;
+      color-scheme: dark;
+    }
+
+    .filter-field select:focus,
+    .filter-field input:focus {
+      border-color: var(--accent);
+    }
+
+    /* ===== فترات سريعة ===== */
+    .quick-ranges {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .quick-ranges .qr-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text3);
+      margin-inline-end: 2px;
+    }
+
+    .quick-ranges .btn {
+      padding: 5px 12px;
+      font-size: 11px;
+    }
+
+    .quick-ranges .btn.active {
+      background: rgba(79, 124, 255, 0.16);
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* ===== ملخص النتائج ===== */
+    .filter-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius2);
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    .filter-summary strong {
+      color: var(--text);
+    }
+
+    .filter-summary .fs-cost {
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    @media (max-width: 560px) {
+      .filters-card {
+        padding: 12px;
+      }
+
+      .filters-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .filter-field.car-field,
+      .filter-field.type-field {
+        grid-column: 1 / -1;
+      }
+
+      .quick-ranges .btn {
+        flex: 1 1 auto;
+        justify-content: center;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -34,21 +157,47 @@
         <button class="btn btn-primary" onclick="openModal()">+ تسجيل تغيير فلتر</button>
       </div>
       <div class="content">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap">
-          <select id="filter-car" onchange="loadFilters()"
-            style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius2);padding:7px 11px;font-family:Cairo,sans-serif;font-size:12px;color:var(--text);outline:none">
-            <option value="">كل السيارات</option>
-          </select>
-          <select id="filter-type" onchange="loadFilters()"
-            style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius2);padding:7px 11px;font-family:Cairo,sans-serif;font-size:12px;color:var(--text);outline:none">
-            <option value="">كل الأنواع</option>
-            <option value="air">فلتر هواء</option>
-            <option value="oil">فلتر زيت</option>
-            <option value="fuel">فلتر بنزين</option>
-            <option value="cabin">فلتر كابينة</option>
-            <option value="other">أخرى</option>
-          </select>
+        <div class="filters-card">
+          <div class="filters-grid">
+            <div class="filter-field car-field">
+              <label for="filter-car">السيارة</label>
+              <select id="filter-car" onchange="loadFilters()">
+                <option value="">🚗 كل السيارات</option>
+              </select>
+            </div>
+            <div class="filter-field type-field">
+              <label for="filter-type">نوع الفلتر</label>
+              <select id="filter-type" onchange="loadFilters()">
+                <option value="">كل الأنواع</option>
+                <option value="air">فلتر هواء</option>
+                <option value="oil">فلتر زيت</option>
+                <option value="fuel">فلتر بنزين</option>
+                <option value="cabin">فلتر كابينة</option>
+                <option value="other">أخرى</option>
+              </select>
+            </div>
+            <div class="filter-field">
+              <label for="filter-from">من تاريخ</label>
+              <input type="date" id="filter-from" onchange="onDateManualChange()">
+            </div>
+            <div class="filter-field">
+              <label for="filter-to">إلى تاريخ</label>
+              <input type="date" id="filter-to" onchange="onDateManualChange()">
+            </div>
+          </div>
+
+          <div class="quick-ranges">
+            <span class="qr-label">فترات سريعة:</span>
+            <button type="button" class="btn btn-ghost" data-range="today" onclick="setQuickRange('today')">اليوم</button>
+            <button type="button" class="btn btn-ghost" data-range="week" onclick="setQuickRange('week')">آخر أسبوع</button>
+            <button type="button" class="btn btn-ghost" data-range="month" onclick="setQuickRange('month')">هذا الشهر</button>
+            <button type="button" class="btn btn-ghost" data-range="last30" onclick="setQuickRange('last30')">آخر ٣٠ يوم</button>
+            <button type="button" class="btn btn-ghost" data-range="all" onclick="setQuickRange('all')">كل الفترات</button>
+          </div>
         </div>
+
+        <div class="filter-summary" id="filter-summary"></div>
+
         <div class="maint-grid" id="filter-list">
           <div class="loading">جاري التحميل...</div>
         </div>
@@ -113,25 +262,118 @@
 
     const TYPE_LABELS = { air: 'فلتر هواء', oil: 'فلتر زيت', fuel: 'فلتر بنزين', cabin: 'فلتر كابينة', other: 'أخرى' };
 
+    // تاريخ محلي بصيغة YYYY-MM-DD (بدون مشاكل التوقيت)
+    function isoLocal(d = new Date()) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function periodText(from, to) {
+      if (from && to) {
+        if (from === to) return `تقرير يوم ${fmtDate(from)}`;
+        return `من ${fmtDate(from)} إلى ${fmtDate(to)}`;
+      }
+      if (from) return `من ${fmtDate(from)} حتى الآن`;
+      if (to) return `حتى ${fmtDate(to)}`;
+      return 'كل الفترات';
+    }
+
+    function markQuickRange(range) {
+      document.querySelectorAll('.quick-ranges .btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.range === range);
+      });
+    }
+
+    function setQuickRange(type) {
+      const now = new Date();
+      const fromEl = document.getElementById('filter-from');
+      const toEl = document.getElementById('filter-to');
+
+      if (type === 'today') {
+        fromEl.value = isoLocal(now);
+        toEl.value = isoLocal(now);
+      } else if (type === 'week') {
+        const start = new Date(now);
+        start.setDate(start.getDate() - 6);
+        fromEl.value = isoLocal(start);
+        toEl.value = isoLocal(now);
+      } else if (type === 'month') {
+        fromEl.value = isoLocal(new Date(now.getFullYear(), now.getMonth(), 1));
+        toEl.value = isoLocal(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+      } else if (type === 'last30') {
+        const start = new Date(now);
+        start.setDate(start.getDate() - 29);
+        fromEl.value = isoLocal(start);
+        toEl.value = isoLocal(now);
+      } else {
+        fromEl.value = '';
+        toEl.value = '';
+      }
+
+      markQuickRange(type);
+      loadFilters();
+    }
+
+    // المستخدم اختار تواريخ يدويًا
+    function onDateManualChange() {
+      markQuickRange('');
+      loadFilters();
+    }
+
     async function init() {
       const { data: cars } = await get('/cars');
       const opts = cars.map(c => `<option value="${c.id}">${c.plate} — ${c.make} ${c.model}</option>`).join('');
       document.getElementById('f-car').innerHTML = '<option value="">اختر السيارة</option>' + opts;
-      document.getElementById('filter-car').innerHTML = '<option value="">كل السيارات</option>' + opts;
+      document.getElementById('filter-car').innerHTML = '<option value="">🚗 كل السيارات</option>' + opts;
+      markQuickRange('all');
       loadFilters();
     }
 
     async function loadFilters() {
       const carId = document.getElementById('filter-car').value;
       const type = document.getElementById('filter-type').value;
-      let qs = [];
-      if (carId) qs.push('car_id=' + carId);
-      if (type) qs.push('filter_type=' + type);
-      const { data: rows } = await get('/filters' + (qs.length ? '?' + qs.join('&') : ''));
+      const from = document.getElementById('filter-from').value;
+      const to = document.getElementById('filter-to').value;
+
+      if (from && to && from > to) {
+        document.getElementById('filter-summary').innerHTML =
+          `<span style="color:var(--red);font-weight:700">⚠️ تاريخ البداية لازم يكون قبل تاريخ النهاية</span>`;
+        toast('تاريخ البداية لازم يكون قبل تاريخ النهاية', 'error');
+        return;
+      }
+
+      const qs = new URLSearchParams();
+      if (carId) qs.set('car_id', carId);
+      if (type) qs.set('filter_type', type);
+      if (from) qs.set('from', from);
+      if (to) qs.set('to', to);
 
       const el = document.getElementById('filter-list');
+      el.innerHTML = `<div class="loading">جاري التحميل...</div>`;
+
+      let rows;
+      try {
+        const res = await get('/filters' + (qs.toString() ? '?' + qs.toString() : ''));
+        rows = res.data;
+      } catch (e) {
+        el.innerHTML = `<div class="empty"><div class="empty-icon">❌</div><h3>تعذر تحميل السجلات</h3><p>${e.message}</p></div>`;
+        toast(e.message, 'error');
+        return;
+      }
+
+      const totalCost = rows.reduce((sum, r) => sum + (Number(r.cost) || 0), 0);
+      document.getElementById('filter-summary').innerHTML = `
+        <span>📄 <strong>${periodText(from, to)}</strong></span>
+        <span>
+          <strong>${rows.length}</strong> سجل
+          ${totalCost ? ` — إجمالي التكلفة <span class="fs-cost">${fmtCost(totalCost)}</span>` : ''}
+        </span>`;
+
       if (!rows.length) {
-        el.innerHTML = `<div class="empty"><div class="empty-icon">🔧</div><h3>لا توجد سجلات</h3><p>سجل أول تغيير فلتر</p></div>`;
+        const hasFilter = carId || type || from || to;
+        el.innerHTML = `<div class="empty"><div class="empty-icon">🔧</div><h3>لا توجد سجلات</h3><p>${hasFilter ? 'مفيش تغييرات فلاتر مطابقة للفلاتر المختارة — جرّب توسيع الفترة أو «كل الفترات»' : 'سجل أول تغيير فلتر'}</p></div>`;
         return;
       }
       el.innerHTML = rows.map(r => {

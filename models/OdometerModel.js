@@ -28,6 +28,50 @@ const OdometerModel = {
     return rows;
   },
 
+  // تقرير قراءات كل السيارات (مع فلترة اختيارية بالسيارة والتاريخ)
+  // نفس منطق findByCar لكن من غير تحديد سيارة إجبارياً
+  async findAll({ carId = null, from = null, to = null } = {}) {
+    const where = ['c.is_active = 1'];
+    const params = [];
+
+    if (carId) {
+      where.push('o.car_id = ?');
+      params.push(carId);
+    }
+    if (from) {
+      where.push('o.reading_date >= ?');
+      params.push(from);
+    }
+    if (to) {
+      where.push('o.reading_date <= ?');
+      params.push(to);
+    }
+
+    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+    const [rows] = await pool.query(`
+      SELECT
+        o.*,
+        c.plate, c.make, c.model,
+        COALESCE(
+          CAST(o.reading_km AS SIGNED) - (
+            SELECT CAST(prev.reading_km AS SIGNED)
+            FROM   odometer_logs prev
+            WHERE  prev.car_id = o.car_id
+              AND  (prev.reading_date < o.reading_date
+                    OR (prev.reading_date = o.reading_date AND prev.id < o.id))
+            ORDER  BY prev.reading_date DESC, prev.id DESC
+            LIMIT  1
+          ), 0
+        ) AS km_since_last
+      FROM odometer_logs o
+      JOIN cars c ON c.id = o.car_id
+      ${whereSql}
+      ORDER BY o.reading_date DESC, o.id DESC
+    `, params);
+    return rows;
+  },
+
   // آخر قراءة لسيارة
   async findLatestByCar(carId) {
     const [[row]] = await pool.query(`

@@ -421,6 +421,76 @@ const ReportModel = {
       rows,
     };
   },
+  // ── تقرير التكاليف الشامل (زيت + فلاتر + رخص) ────────────────
+  // GET /api/reports/costs?car_id=&type=&from=&to=
+  // type: oil | filter | filter:air | filter:oil | filter:fuel |
+  //       filter:cabin | filter:other | license | license:license |
+  //       license:insurance | license:inspection | license:ownership |
+  //       license:other
+  async costReport({ carId = null, type = null, from = null, to = null } = {}) {
+    const conditions = [];
+    const params     = [];
+
+    if (carId) { conditions.push('t.car_id = ?');          params.push(carId); }
+    if (from)  { conditions.push('t.change_date >= ?');    params.push(from); }
+    if (to)    { conditions.push('t.change_date <= ?');    params.push(to); }
+
+    if (type === 'oil') {
+      conditions.push("t.category = 'oil'");
+    } else if (type === 'filter') {
+      conditions.push("t.category = 'filter'");
+    } else if (type === 'license') {
+      conditions.push("t.category = 'license'");
+    } else if (type && type.startsWith('filter:')) {
+      conditions.push("t.category = 'filter' AND t.sub_type = ?");
+      params.push(type.slice('filter:'.length));
+    } else if (type && type.startsWith('license:')) {
+      conditions.push("t.category = 'license' AND t.sub_type = ?");
+      params.push(type.slice('license:'.length));
+    }
+
+    const whereSql = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
+
+    const [rows] = await pool.query(`
+      SELECT
+        t.*,
+        c.plate, c.make, c.model
+      FROM (
+        SELECT
+          'oil' AS category, o.id, o.car_id, o.change_date,
+          COALESCE(o.cost, 0) AS cost,
+          o.workshop, o.notes, o.km_at_change,
+          o.oil_brand AS brand, o.oil_grade AS grade,
+          NULL AS sub_type, NULL AS doc_number
+        FROM oil_changes o
+
+        UNION ALL
+
+        SELECT
+          'filter', f.id, f.car_id, f.change_date,
+          COALESCE(f.cost, 0),
+          f.workshop, f.notes, f.km_at_change,
+          f.brand, NULL,
+          f.filter_type, NULL
+        FROM filter_changes f
+
+        UNION ALL
+
+        SELECT
+          'license', l.id, l.car_id, l.issue_date,
+          COALESCE(l.cost, 0),
+          l.issuer, l.notes, NULL,
+          NULL, NULL,
+          l.doc_type, l.doc_number
+        FROM licenses l
+      ) t
+      JOIN cars c ON c.id = t.car_id
+      ${whereSql}
+      ORDER BY t.change_date DESC, t.id DESC
+    `, params);
+
+    return rows;
+  },
 };
 
 module.exports = ReportModel;

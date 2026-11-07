@@ -35,11 +35,8 @@ function renderSidebar() {
         <span class="nav-icon">📋</span> الرخص
         <span class="nav-badge hidden" id="nb-licenses"></span>
       </a>
-      <a class="nav-item" href="/reports" data-page="reports">
-        <span class="nav-icon">📈</span> التقارير
-      </a>
-      <a class="nav-item" href="/monthly-reports" data-page="monthly-reports">
-        <span class="nav-icon">🗓</span> تقارير الشهر
+      <a class="nav-item" href="/cost-report" data-page="cost-report">
+        <span class="nav-icon">💰</span> تقرير التكاليف
       </a>
       <a class="nav-item" href="/oil-status" data-page="oil-status">
         <span class="nav-icon">🛢️</span> حالة الزيت

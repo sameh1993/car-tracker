@@ -7,52 +7,87 @@
   <title>تسجيل عداد بالكاميرا - كار تراكر</title>
   <link rel="stylesheet" href="css/main.css" />
   <style>
-    .capture-layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1.1fr) minmax(320px, 420px);
-      gap: 18px;
+    /* ===== صفحة موبايل: فورم واحد متكامل ===== */
+    .capture-wrap {
+      max-width: 560px;
+      margin: 0 auto;
     }
 
-    .capture-card,
-    .preview-card,
-    .tips-card {
+    .capture-form {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
+      overflow: hidden;
     }
 
-    .capture-card,
-    .preview-card,
-    .tips-card {
-      padding: 18px;
+    .cf-header {
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid var(--border);
     }
 
-    .capture-card h3,
-    .preview-card h3,
-    .tips-card h3 {
-      font-size: 14px;
-      font-weight: 700;
-      margin-bottom: 14px;
+    .cf-header h2 {
+      font-size: 17px;
+      font-weight: 800;
     }
 
-    .camera-input {
-      display: block;
-      width: 100%;
-      padding: 16px;
-      border: 1px dashed var(--border2);
-      border-radius: var(--radius2);
-      background: var(--bg3);
+    .cf-header p {
+      font-size: 12px;
       color: var(--text2);
-      font-family: "Cairo", sans-serif;
-      cursor: pointer;
-      margin-bottom: 14px;
+      margin-top: 4px;
+      line-height: 1.6;
     }
 
-    .preview-box {
+    .cf-section {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cf-section:last-of-type {
+      border-bottom: none;
+    }
+
+    .cf-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text2);
+      margin-bottom: 8px;
+    }
+
+    .cf-section .form-row:last-child {
+      margin-bottom: 0;
+    }
+
+    /* آخر قراءة */
+    .last-reading {
+      margin-top: 12px;
+      padding: 11px 13px;
+      border-radius: var(--radius2);
       background: var(--bg3);
       border: 1px solid var(--border2);
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    .last-reading strong {
+      display: block;
+      font-size: 18px;
+      color: var(--accent);
+      margin-top: 3px;
+    }
+
+    .last-reading .lr-date {
+      font-size: 10px;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+
+    /* اختيار الصورة */
+    .preview-box {
+      background: var(--bg3);
+      border: 1px dashed var(--border2);
       border-radius: var(--radius2);
-      min-height: 280px;
+      aspect-ratio: 4 / 3;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -70,13 +105,36 @@
       text-align: center;
       color: var(--text3);
       font-size: 13px;
-      line-height: 1.8;
-      padding: 24px;
+      line-height: 1.9;
+      padding: 20px;
+    }
+
+    .preview-placeholder .big-icon {
+      font-size: 34px;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .photo-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .photo-actions .btn {
+      justify-content: center;
+      padding: 10px 8px;
+      font-size: 12px;
+    }
+
+    .photo-actions .btn-wide {
+      grid-column: 1 / -1;
     }
 
     .ocr-status {
-      margin-top: 12px;
-      padding: 12px 14px;
+      margin-top: 10px;
+      padding: 10px 12px;
       border-radius: var(--radius2);
       font-size: 12px;
       line-height: 1.7;
@@ -95,103 +153,88 @@
       border-color: rgba(239, 68, 68, 0.22);
     }
 
-    .meta-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 11px;
+    /* حقل رقم العداد */
+    .reading-input {
+      font-size: 30px !important;
+      font-weight: 900 !important;
+      text-align: center;
+      letter-spacing: 1px;
+      padding: 12px !important;
+      color: var(--accent) !important;
     }
 
-    .detected-km {
-      font-size: 34px;
-      font-weight: 900;
-      color: var(--accent);
-      line-height: 1;
-      margin-top: 6px;
-    }
-
-    .detected-sub {
-      margin-top: 6px;
+    .ocr-hint {
       font-size: 11px;
-      color: var(--text2);
+      margin-top: 6px;
+      min-height: 16px;
+      line-height: 1.7;
+      color: var(--text3);
     }
 
-    .last-reading {
-      margin-bottom: 14px;
-      padding: 12px 14px;
-      border-radius: var(--radius2);
-      background: var(--bg3);
-      border: 1px solid var(--border2);
-      font-size: 12px;
+    .ocr-hint.ok {
+      color: var(--green);
     }
 
-    .last-reading strong {
-      display: block;
-      font-size: 18px;
-      color: var(--accent);
-      margin-top: 4px;
+    .ocr-hint.error {
+      color: var(--red);
     }
 
-    .tips-list {
-      display: grid;
-      gap: 10px;
-    }
-
-    .tip-item {
-      padding: 12px 13px;
-      border-radius: var(--radius2);
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid var(--border);
-      font-size: 12px;
-      color: var(--text2);
-    }
-
-    .tip-item b {
-      color: var(--text);
-    }
-
-    .actions-row {
+    .cf-footer {
+      padding: 14px 18px 18px;
       display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 14px;
+      gap: 8px;
+      background: var(--card);
     }
 
-    .actions-row .btn {
+    .cf-footer .btn {
       flex: 1;
       justify-content: center;
     }
 
-    .hidden-canvas {
-      display: none;
-    }
-
-    @media (max-width: 920px) {
-      .capture-layout {
-        grid-template-columns: 1fr;
-      }
+    .cf-note {
+      padding: 0 18px 16px;
+      font-size: 11px;
+      color: var(--text3);
+      line-height: 1.7;
     }
 
     @media (max-width: 560px) {
-      .meta-grid {
-        grid-template-columns: 1fr;
+      .content {
+        padding: 12px 12px 90px;
       }
 
-      .capture-card,
-      .preview-card,
-      .tips-card {
+      .capture-form {
+        border-radius: var(--radius);
+      }
+
+      .cf-header {
+        padding: 15px 14px 12px;
+      }
+
+      .cf-section {
         padding: 14px;
       }
 
+      .cf-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 5;
+        padding: 12px 14px;
+        border-top: 1px solid var(--border);
+        box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.25);
+      }
+
+      .cf-note {
+        padding: 0 14px 14px;
+        margin-top: 10px;
+      }
+
       .preview-box {
-        min-height: 220px;
+        aspect-ratio: 3 / 2;
       }
 
-      .detected-km {
-        font-size: 28px;
-      }
-
-      .actions-row {
-        flex-direction: column;
+      .reading-input {
+        font-size: 26px !important;
       }
     }
   </style>
@@ -215,100 +258,106 @@
           <span></span>
         </div>
       </div>
+
       <div class="topbar">
         <div>
-          <div class="page-title">تسجيل عداد بالكاميرا</div>
-          <div class="page-sub">صوّر عداد العربية من الموبايل وسيتم اقتراح رقم القراءة تلقائيًا.</div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <a class="btn btn-ghost" href="/odometer">الرجوع لصفحة العداد</a>
+          <div class="page-title">📷 تسجيل عداد بالكاميرا</div>
+          <div class="page-sub">صوّر العداد أو اختار صورة من المعرض، وعدّل الرقم قبل الحفظ.</div>
         </div>
       </div>
 
       <div class="content">
-        <div class="capture-layout">
-          <div>
-            <section class="preview-card">
-              <h3>صورة العداد</h3>
-              <input class="camera-input" type="file" id="camera-input" accept="image/*" capture="environment" />
+        <div class="capture-wrap">
+          <form class="capture-form" id="capture-form" novalidate>
+            <div class="cf-header">
+              <h2>🔢 قراءة عداد جديدة</h2>
+              <p>كل الخطوات في فورم واحد: اختار السيارة، صوّر العداد، راجع الرقم، ثم احفظ.</p>
+            </div>
+
+            <!-- 1) السيارة -->
+            <div class="cf-section">
+              <div class="form-row">
+                <label for="car-select">السيارة *</label>
+                <select id="car-select" required>
+                  <option value="">اختر السيارة</option>
+                </select>
+              </div>
+
+              <div class="last-reading" id="last-reading">
+                آخر قراءة مسجلة
+                <strong id="last-reading-km">اختر السيارة أولًا</strong>
+                <div class="lr-date" id="last-reading-date"></div>
+              </div>
+            </div>
+
+            <!-- 2) صورة العداد -->
+            <div class="cf-section">
+              <label class="cf-label">صورة العداد</label>
+
               <div class="preview-box" id="preview-box">
                 <div class="preview-placeholder">
-                  التقط صورة واضحة للعداد من كاميرا الموبايل
+                  <span class="big-icon">📷</span>
+                  التقط صورة للعداد من الكاميرا
                   <br />
-                  ويفضل أن تكون الأرقام مستقيمة وقريبة من الكاميرا.
+                  أو اختار صورة من معرض الموبايل
                 </div>
               </div>
-              <div class="actions-row">
-                <button class="btn btn-primary" id="scan-btn" onclick="runOcr()" disabled>
-                  قراءة الرقم من الصورة
+
+              <div class="photo-actions">
+                <button type="button" class="btn btn-primary" id="camera-btn">📷 كاميرا</button>
+                <button type="button" class="btn btn-ghost" id="gallery-btn">🖼️ من المعرض</button>
+                <button type="button" class="btn btn-ghost btn-wide" id="rescan-btn" disabled>
+                  🔄 إعادة تحليل الصورة
                 </button>
-                <button class="btn btn-ghost" onclick="clearImage()">مسح الصورة</button>
               </div>
+
+              <!-- كاميرا -->
+              <input type="file" id="camera-input" accept="image/*" capture="environment" hidden />
+              <!-- معرض الموبايل -->
+              <input type="file" id="gallery-input" accept="image/*" hidden />
+
               <div class="ocr-status" id="ocr-status">
-                اختر سيارة ثم التقط صورة للعداد لبدء التحليل.
+                اختار السيارة وارفع صورة العداد، وهيتم استخراج الرقم تلقائيًا.
               </div>
-              <canvas id="preprocess-canvas" class="hidden-canvas"></canvas>
-            </section>
-
-            <section class="tips-card" style="margin-top:18px">
-              <h3>نصائح لقراءة أدق</h3>
-              <div class="tips-list">
-                <div class="tip-item"><b>الإضاءة:</b> حاول أن تكون الصورة مضيئة بدون انعكاس قوي على الزجاج.</div>
-                <div class="tip-item"><b>التركيز:</b> قرّب الكاميرا حتى تمتلئ الأرقام معظم الصورة.</div>
-                <div class="tip-item"><b>الثبات:</b> التقط الصورة والعداد ثابت لتقليل الاهتزاز والضبابية.</div>
-              </div>
-            </section>
-          </div>
-
-          <section class="capture-card">
-            <h3>بيانات التسجيل</h3>
-
-            <div class="form-row">
-              <label>السيارة *</label>
-              <select id="car-select">
-                <option value="">اختر السيارة</option>
-              </select>
             </div>
 
-            <div class="last-reading" id="last-reading">
-              آخر قراءة مسجلة
-              <strong id="last-reading-km">اختر السيارة أولًا</strong>
-              <div id="last-reading-date" style="color:var(--text3);margin-top:4px"></div>
-            </div>
-
-            <div class="meta-grid">
+            <!-- 3) الرقم والتاريخ والملاحظات -->
+            <div class="cf-section">
               <div class="form-row">
-                <label>تاريخ القراءة</label>
+                <label for="reading-km">رقم العداد (كم) * — يمكن تعديله</label>
+                <input type="number" id="reading-km" class="reading-input" inputmode="numeric"
+                  placeholder="سيظهر الرقم هنا" min="0" />
+                <div class="ocr-hint" id="ocr-hint">
+                  بعد تحليل الصورة هيظهر الرقم هنا، وتقدر تعدّله قبل الحفظ.
+                </div>
+              </div>
+
+              <div class="form-row">
+                <label for="reading-date">تاريخ القراءة</label>
                 <input type="date" id="reading-date" />
               </div>
+
               <div class="form-row">
-                <label>رقم العداد المستنتج *</label>
-                <input type="number" id="reading-km" placeholder="سيظهر هنا الرقم المستنتج" min="0"
-                  oninput="validateReading()" />
+                <label for="reading-notes">ملاحظات (اختياري)</label>
+                <textarea id="reading-notes" rows="2" placeholder="أي ملاحظة على القراءة أو الصورة"></textarea>
               </div>
             </div>
 
-            <div class="form-row">
-              <label>الرقم المقترح</label>
-              <div class="detected-km" id="detected-km">—</div>
-              <div class="detected-sub" id="detected-sub">بعد التحليل سيتم عرض أفضل رقم مستنتج هنا.</div>
+            <!-- 4) الحفظ -->
+            <div class="cf-footer">
+              <button type="submit" class="btn btn-primary" id="save-btn">💾 حفظ القراءة</button>
+              <a class="btn btn-ghost" href="/odometer">📋 السجل</a>
             </div>
 
-            <div class="form-row">
-              <label>ملاحظات</label>
-              <textarea id="reading-notes" rows="4"
-                placeholder="مثل: تم التصوير من الموبايل أو ملاحظة على حالة الشاشة"></textarea>
+            <div class="cf-note">
+              💡 للحصول على قراءة أدق: صوّر العداد في إضاءة جيدة، وقرّب الكاميرا حتى تظهر الأرقام واضحة.
+              <canvas id="preprocess-canvas" hidden></canvas>
             </div>
-
-            <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="saveReading()">
-              حفظ قراءة العداد
-            </button>
-          </section>
+          </form>
         </div>
       </div>
     </div>
   </div>
-
 
   <script src="js/jquery.min.js"></script>
   <script src="js/sidebar.js"></script>
@@ -325,76 +374,132 @@
       ocrBusy: false,
     };
 
+    const form = document.getElementById('capture-form');
     const cameraInput = document.getElementById('camera-input');
+    const galleryInput = document.getElementById('gallery-input');
+    const cameraBtn = document.getElementById('camera-btn');
+    const galleryBtn = document.getElementById('gallery-btn');
     const previewBox = document.getElementById('preview-box');
     const ocrStatus = document.getElementById('ocr-status');
-    const scanBtn = document.getElementById('scan-btn');
+    const scanBtn = document.getElementById('rescan-btn');
     const carSelect = document.getElementById('car-select');
     const readingInput = document.getElementById('reading-km');
     const readingDate = document.getElementById('reading-date');
-    const detectedKm = document.getElementById('detected-km');
-    const detectedSub = document.getElementById('detected-sub');
+    const readingNotes = document.getElementById('reading-notes');
+    const ocrHint = document.getElementById('ocr-hint');
     const lastReadingKm = document.getElementById('last-reading-km');
     const lastReadingDate = document.getElementById('last-reading-date');
     const preprocessCanvas = document.getElementById('preprocess-canvas');
+    const saveBtn = document.getElementById('save-btn');
 
-    readingDate.value = today();
+    const EMPTY_PLACEHOLDER = `
+      <div class="preview-placeholder">
+        <span class="big-icon">📷</span>
+        التقط صورة للعداد من الكاميرا
+        <br />
+        أو اختار صورة من معرض الموبايل
+      </div>`;
 
-    cameraInput.addEventListener('change', async (event) => {
-      const file = event.target.files?.[0];
-      if (!file) return;
+    // تاريخ محلي بصيغة YYYY-MM-DD
+    function localToday() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
 
-      const reader = new FileReader();
-      reader.onload = async () => {
-        state.imageDataUrl = reader.result;
-        previewBox.innerHTML = `<img src="${state.imageDataUrl}" alt="صورة العداد">`;
-        scanBtn.disabled = false;
-        setStatus('تم تحميل الصورة. اضغط "قراءة الرقم من الصورة" أو سيتم التحليل تلقائيًا.', '');
-        await runOcr();
-      };
-      reader.readAsDataURL(file);
+    readingDate.value = localToday();
+
+    // ── اختيار الصور ────────────────────────────────────────────
+    cameraBtn.addEventListener('click', () => cameraInput.click());
+    galleryBtn.addEventListener('click', () => galleryInput.click());
+
+    [cameraInput, galleryInput].forEach((input) => {
+      input.addEventListener('change', async (event) => {
+        const file = event.target.files && event.target.files[0];
+        input.value = ''; // يسمح باختيار نفس الصورة تاني
+        if (!file) return;
+        await handleImageFile(file);
+      });
     });
 
-    carSelect.addEventListener('change', async () => {
-      state.selectedCarId = carSelect.value;
-      await loadLatestReading();
-    });
+    async function handleImageFile(file) {
+      if (!file.type || !file.type.startsWith('image/')) {
+        return toast('اختار صورة صالحة', 'error');
+      }
 
+      setStatus('تم تحميل الصورة، جاري تحليلها...', '');
+      state.suggestedValue = '';
+
+      try {
+        state.imageDataUrl = await readFileAsDataURL(file);
+      } catch (error) {
+        setStatus('تعذر قراءة الصورة. حاول تختار صورة تانية.', 'error');
+        return;
+      }
+
+      previewBox.innerHTML = `<img src="${state.imageDataUrl}" alt="صورة العداد" />`;
+      scanBtn.disabled = false;
+      await runOcr();
+    }
+
+    function readFileAsDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // ── حالة / رسائل ────────────────────────────────────────────
     function setStatus(message, mode) {
       ocrStatus.textContent = message;
       ocrStatus.className = 'ocr-status' + (mode ? ` ${mode}` : '');
+    }
+
+    function setHint(message, mode) {
+      ocrHint.textContent = message;
+      ocrHint.className = 'ocr-hint' + (mode ? ` ${mode}` : '');
     }
 
     function clearImage() {
       state.imageDataUrl = null;
       state.suggestedValue = '';
       cameraInput.value = '';
+      galleryInput.value = '';
       scanBtn.disabled = true;
-      previewBox.innerHTML = `
-          <div class="preview-placeholder">
-            التقط صورة واضحة للعداد من كاميرا الموبايل
-            <br />
-            ويفضل أن تكون الأرقام مستقيمة وقريبة من الكاميرا.
-          </div>
-        `;
-      detectedKm.textContent = '—';
-      detectedSub.textContent = 'بعد التحليل سيتم عرض أفضل رقم مستنتج هنا.';
-      setStatus('اختر صورة جديدة لبدء التحليل.', '');
+      previewBox.innerHTML = EMPTY_PLACEHOLDER;
     }
 
+    // ── جلب السيارات وآخر قراءة ─────────────────────────────────
     async function loadCars() {
       const { data: cars } = await get('/cars');
       carSelect.innerHTML =
         '<option value="">اختر السيارة</option>' +
-        cars.map(car => `<option value="${car.id}">${car.plate} — ${car.make} ${car.model}</option>`).join('');
+        cars
+          .map(
+            (car) =>
+              `<option value="${car.id}">${car.plate} — ${car.make} ${car.model}</option>`,
+          )
+          .join('');
     }
 
+    carSelect.addEventListener('change', async () => {
+      state.selectedCarId = carSelect.value;
+      await loadLatestReading();
+    });
+
     async function loadLatestReading() {
+      readingInput.classList.remove('input-ok', 'input-error');
+
       if (!state.selectedCarId) {
         state.lastReading = null;
         lastReadingKm.textContent = 'اختر السيارة أولًا';
         lastReadingDate.textContent = '';
         readingInput.min = 0;
+        setHint('بعد تحليل الصورة هيظهر الرقم هنا، وتقدر تعدّله قبل الحفظ.', '');
         return;
       }
 
@@ -409,7 +514,8 @@
           return;
         }
 
-        lastReadingKm.textContent = Number(data.reading_km).toLocaleString('ar-EG') + ' كم';
+        lastReadingKm.textContent =
+          Number(data.reading_km).toLocaleString('ar-EG') + ' كم';
         lastReadingDate.textContent = 'آخر تحديث: ' + fmtDate(data.reading_date);
         readingInput.min = Number(data.reading_km) + 1;
         validateReading();
@@ -418,6 +524,7 @@
       }
     }
 
+    // ── معالجة الصورة ───────────────────────────────────────────
     function preprocessImage(dataUrl) {
       return new Promise((resolve, reject) => {
         const img = new Image();
@@ -427,14 +534,22 @@
           preprocessCanvas.width = Math.max(1, Math.round(img.width * scale));
           preprocessCanvas.height = Math.max(1, Math.round(img.height * scale));
 
-          const ctx = preprocessCanvas.getContext('2d', { willReadFrequently: true });
+          const ctx = preprocessCanvas.getContext('2d', {
+            willReadFrequently: true,
+          });
           ctx.drawImage(img, 0, 0, preprocessCanvas.width, preprocessCanvas.height);
 
-          const imageData = ctx.getImageData(0, 0, preprocessCanvas.width, preprocessCanvas.height);
+          const imageData = ctx.getImageData(
+            0,
+            0,
+            preprocessCanvas.width,
+            preprocessCanvas.height,
+          );
           const data = imageData.data;
 
           for (let i = 0; i < data.length; i += 4) {
-            const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+            const gray =
+              data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
             const boosted = gray > 145 ? 255 : gray < 80 ? 0 : gray;
             data[i] = boosted;
             data[i + 1] = boosted;
@@ -451,100 +566,181 @@
 
     function extractDigits(text) {
       const normalized = String(text || '')
-        .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+        .replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
         .replace(/[^\d\s]/g, ' ')
         .split(/\s+/)
         .filter(Boolean)
         .sort((a, b) => b.length - a.length);
 
-      return normalized.find(token => token.length >= 4) || normalized[0] || '';
+      return normalized.find((token) => token.length >= 4) || normalized[0] || '';
     }
 
+    // ── القراءة الضوئية ─────────────────────────────────────────
     async function runOcr() {
       if (!state.imageDataUrl || state.ocrBusy) return;
+
       if (typeof Tesseract === 'undefined') {
-        setStatus('تعذر تحميل محرك قراءة النص. تأكد من وجود إنترنت على الجهاز ثم أعد المحاولة.', 'error');
+        setStatus(
+          'تعذر تحميل محرك قراءة النص. تأكد من وجود إنترنت ثم أعد المحاولة.',
+          'error',
+        );
         return;
       }
 
       state.ocrBusy = true;
       scanBtn.disabled = true;
+      saveBtn.disabled = false;
       setStatus('جارٍ تحليل الصورة واستخراج رقم العداد...', '');
 
       try {
         const processedImage = await preprocessImage(state.imageDataUrl);
+
         const result = await Tesseract.recognize(processedImage, 'eng', {
           tessedit_char_whitelist: '0123456789',
+          logger: (m) => {
+            if (m.status === 'recognizing text') {
+              setStatus(
+                `جارٍ تحليل الصورة... ${Math.round((m.progress || 0) * 100)}%`,
+                '',
+              );
+            }
+          },
         });
 
         const candidate = extractDigits(result.data.text);
         const confidence = Math.round(result.data.confidence || 0);
 
         if (!candidate) {
-          detectedKm.textContent = '—';
-          detectedSub.textContent = 'لم أستطع استخراج رقم واضح. يمكنك إدخاله يدويًا.';
-          setStatus('لم يتم العثور على أرقام واضحة داخل الصورة. جرب صورة أوضح أو أدخل الرقم يدويًا.', 'error');
+          setHint(
+            'لم أستطع استخراج رقم واضح. اكتب رقم العداد يدويًا أو جرّب صورة أوضح.',
+            'error',
+          );
+          setStatus(
+            'لم يتم العثور على أرقام واضحة داخل الصورة. جرّب صورة أوضح أو أدخل الرقم يدويًا.',
+            'error',
+          );
           return;
         }
 
         state.suggestedValue = candidate;
-        detectedKm.textContent = Number(candidate).toLocaleString('ar-EG');
-        detectedSub.textContent = `درجة الثقة التقريبية: ${confidence}%`;
         readingInput.value = candidate;
-        validateReading();
-        setStatus('تم استخراج رقم مقترح من الصورة. راجعه ثم اضغط حفظ.', 'ok');
+        const valid = validateReading();
+
+        if (valid) {
+          setHint(
+            `✅ الرقم المستنتج من الصورة: ${Number(candidate).toLocaleString('ar-EG')} كم — تقدر تعدّله قبل الحفظ (الثقة ${confidence}%).`,
+            'ok',
+          );
+        }
+
+        setStatus(
+          'تم استخراج رقم مقترح من الصورة. راجعه أو عدّله ثم اضغط حفظ.',
+          'ok',
+        );
       } catch (error) {
-        setStatus('حدثت مشكلة أثناء تحليل الصورة. يمكنك إعادة المحاولة أو إدخال الرقم يدويًا.', 'error');
+        setStatus(
+          'حدثت مشكلة أثناء تحليل الصورة. يمكنك إعادة المحاولة أو إدخال الرقم يدويًا.',
+          'error',
+        );
       } finally {
         state.ocrBusy = false;
         scanBtn.disabled = !state.imageDataUrl;
       }
     }
 
+    scanBtn.addEventListener('click', runOcr);
+
+    // ── التحقق من القراءة ───────────────────────────────────────
     function validateReading() {
       const value = Number(readingInput.value);
-      if (!readingInput.value || !state.lastReading) return true;
+      readingInput.classList.remove('input-ok', 'input-error');
 
-      if (value <= Number(state.lastReading.reading_km)) {
-        setStatus(
-          `الرقم الجديد لازم يكون أكبر من آخر قراءة مسجلة (${Number(state.lastReading.reading_km).toLocaleString('ar-EG')} كم).`,
-          'error'
+      if (!readingInput.value) {
+        setHint('اكتب رقم العداد أو صوّر العداد لاستخراجه.', '');
+        return false;
+      }
+
+      if (!state.lastReading) return true;
+
+      const lastKm = Number(state.lastReading.reading_km);
+      if (value <= lastKm) {
+        readingInput.classList.add('input-error');
+        setHint(
+          `❌ لازم يكون أكبر من آخر قراءة مسجلة (${lastKm.toLocaleString('ar-EG')} كم).`,
+          'error',
         );
         return false;
       }
 
+      readingInput.classList.add('input-ok');
+      if (!ocrHint.classList.contains('ok')) {
+        setHint(
+          `✅ القراءة أكبر من آخر قراءة (${lastKm.toLocaleString('ar-EG')} كم).`,
+          'ok',
+        );
+      }
       return true;
     }
 
-    async function saveReading() {
-      if (!state.selectedCarId) return toast('اختر السيارة أولًا', 'error');
-      if (!readingInput.value) return toast('لازم يكون فيه رقم عداد قبل الحفظ', 'error');
+    readingInput.addEventListener('input', () => {
+      state.suggestedValue = '';
+      validateReading();
+    });
+
+    // ── الحفظ ───────────────────────────────────────────────────
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      if (!state.selectedCarId)
+        return toast('اختر السيارة أولًا', 'error');
+      if (!readingInput.value)
+        return toast('لازم يكون فيه رقم عداد قبل الحفظ', 'error');
       if (!validateReading()) return;
+
+      saveBtn.disabled = true;
 
       try {
         await post('/odometer', {
           car_id: state.selectedCarId,
           reading_km: Number(readingInput.value),
-          reading_date: readingDate.value,
-          notes: document.getElementById('reading-notes').value || 'تم تسجيل القراءة من صفحة الكاميرا',
+          reading_date: readingDate.value || localToday(),
+          notes: readingNotes.value || 'تم تسجيل القراءة من صفحة الكاميرا',
         });
 
-        toast('تم حفظ قراءة العداد بنجاح');
-        document.getElementById('reading-notes').value = '';
+        toast('تم حفظ قراءة العداد بنجاح ✅');
+        readingNotes.value = '';
+        readingInput.value = '';
+        readingDate.value = localToday();
         state.suggestedValue = '';
-        detectedKm.textContent = '—';
-        detectedSub.textContent = 'بعد التحليل سيتم عرض أفضل رقم مستنتج هنا.';
         clearImage();
+        setHint('بعد تحليل الصورة هيظهر الرقم هنا، وتقدر تعدّله قبل الحفظ.', '');
+        setStatus('اتحفظت القراءة. تقدر تصوّر قراءة جديدة لنفس السيارة.', 'ok');
         await loadLatestReading();
         loadNavBadges();
       } catch (error) {
         toast(error.message, 'error');
+      } finally {
+        saveBtn.disabled = false;
       }
+    });
+
+    // ── بدء الصفحة (مع دعم ?car_id= للاختيار المسبق) ────────────
+    async function initCapturePage() {
+      await loadCars();
+
+      const carId = new URLSearchParams(location.search).get('car_id');
+      if (
+        carId &&
+        [...carSelect.options].some((o) => o.value === String(carId))
+      ) {
+        carSelect.value = String(carId);
+        state.selectedCarId = String(carId);
+      }
+
+      await loadLatestReading();
     }
 
-    loadCars()
-      .then(loadLatestReading)
-      .catch(error => toast(error.message, 'error'));
+    initCapturePage().catch((error) => toast(error.message, 'error'));
   </script>
 </body>
 

@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>تقرير التكاليف — كار تراك</title>
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    /* ===== بطاقة الفلاتر ===== */
+    .filters-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 14px;
+    }
+
+    .filters-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+    }
+
+    .filter-field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .filter-field label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text2);
+    }
+
+    .filter-field select,
+    .filter-field input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius2);
+      padding: 8px 12px;
+      font-family: "Cairo", sans-serif;
+      font-size: 13px;
+      color: var(--text);
+      outline: none;
+      color-scheme: dark;
+    }
+
+    .filter-field select:focus,
+    .filter-field input:focus {
+      border-color: var(--accent);
+    }
+
+    /* ===== فترات سريعة ===== */
+    .quick-ranges {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .quick-ranges .qr-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text3);
+      margin-inline-end: 2px;
+    }
+
+    .quick-ranges .btn {
+      padding: 5px 12px;
+      font-size: 11px;
+    }
+
+    .quick-ranges .btn.active {
+      background: rgba(79, 124, 255, 0.16);
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* ===== فترة التقرير ===== */
+    .report-period {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius2);
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    .report-period strong {
+      color: var(--text);
+    }
+
+    /* ===== إحصائيات ===== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .stat-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius2);
+      padding: 13px 15px;
+    }
+
+    .stat-box .stat-lbl {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text2);
+      margin-bottom: 6px;
+    }
+
+    .stat-box .stat-val {
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
+    .stat-box .stat-sub {
+      font-size: 10px;
+      color: var(--text3);
+      margin-top: 4px;
+    }
+
+    .stat-box.total {
+      border-top: 3px solid var(--green);
+    }
+
+    .stat-box.total .stat-val {
+      color: var(--green);
+    }
+
+    .stat-box.ops {
+      border-top: 3px solid var(--accent);
+    }
+
+    .stat-box.ops .stat-val {
+      color: var(--accent);
+    }
+
+    .stat-box.cars {
+      border-top: 3px solid var(--teal);
+    }
+
+    .stat-box.cars .stat-val {
+      color: var(--teal);
+    }
+
+    .stat-box.avg {
+      border-top: 3px solid var(--yellow);
+    }
+
+    .stat-box.avg .stat-val {
+      color: var(--yellow);
+    }
+
+    /* ===== توزيع التكلفة حسب النوع ===== */
+    .cat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .cat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius2);
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.1s;
+    }
+
+    .cat-card:hover {
+      border-color: var(--border2);
+      transform: translateY(-1px);
+    }
+
+    .cat-card .cat-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .cat-card .cat-cost {
+      font-size: 19px;
+      font-weight: 800;
+    }
+
+    .cat-card .cat-count {
+      font-size: 10px;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+
+    .cat-card.oil {
+      border-inline-start: 3px solid var(--yellow);
+    }
+
+    .cat-card.oil .cat-cost {
+      color: var(--yellow);
+    }
+
+    .cat-card.filter {
+      border-inline-start: 3px solid var(--accent);
+    }
+
+    .cat-card.filter .cat-cost {
+      color: var(--accent);
+    }
+
+    .cat-card.license {
+      border-inline-start: 3px solid var(--green);
+    }
+
+    .cat-card.license .cat-cost {
+      color: var(--green);
+    }
+
+    /* ===== كروت التقرير ===== */
+    .report-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .report-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .report-head h3 {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .report-head span {
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    /* ===== الجداول ===== */
+    .cost-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      min-width: 820px;
+    }
+
+    .cost-table th {
+      text-align: right;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text3);
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .cost-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    .cost-table tbody tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .cost-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .per-car-table {
+      min-width: 620px;
+    }
+
+    .car-main {
+      font-weight: 700;
+    }
+
+    .car-sub {
+      font-size: 10px;
+      color: var(--text3);
+      margin-top: 1px;
+    }
+
+    .cost-cell {
+      font-weight: 800;
+      color: var(--green);
+      white-space: nowrap;
+    }
+
+    .notes-cell {
+      color: var(--text2);
+      max-width: 220px;
+    }
+
+    .share-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 120px;
+    }
+
+    .share-bar {
+      flex: 1;
+      height: 6px;
+      background: var(--bg3);
+      border-radius: 4px;
+      overflow: hidden;
+      min-width: 60px;
+    }
+
+    .share-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: var(--accent);
+    }
+
+    .share-pct {
+      font-size: 10px;
+      color: var(--text2);
+      min-width: 34px;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 40px 16px;
+    }
+
+    @media (max-width: 560px) {
+      .filters-card {
+        padding: 12px;
+      }
+
+      .filters-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .filter-field.car-field,
+      .filter-field.type-field {
+        grid-column: 1 / -1;
+      }
+
+      .quick-ranges .btn {
+        flex: 1 1 auto;
+        justify-content: center;
+      }
+
+      .content {
+        padding: 12px;
+      }
+    }
+
+    @media print {
+      .sidebar,
+      .sm-menu,
+      .topbar .btn,
+      .filters-card,
+      .print-hide {
+        display: none !important;
+      }
+
+      .content {
+        padding: 0;
+      }
+
+      body {
+        background: #fff;
+        color: #000;
+      }
+
+      .stat-box,
+      .cat-card,
+      .report-card {
+        border-color: #bbb;
+        background: #fff;
+        color: #000;
+      }
+
+      .report-period {
+        background: #f3f3f3;
+        border-color: #bbb;
+        color: #000;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div id="sidebar-mount"></div>
+    <div class="main">
+      <div class="sm-menu">
+        <div class="sidebar-logo">
+          <div class="logo-icon">🚗</div>
+          <div class="text">
+            <h1>كار تراكر</h1>
+            <p>نظام متابعة السيارات</p>
+          </div>
+        </div>
+        <div class="bars">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+
+      <div class="topbar">
+        <div>
+          <div class="page-title">💰 تقرير التكاليف الشامل</div>
+          <div class="page-sub">كل تكاليف الزيت والفلاتر والرخص — مع فلترة بالسيارة والنوع والفترة</div>
+        </div>
+        <button class="btn btn-ghost" onclick="window.print()">🖨️ طباعة</button>
+      </div>
+
+      <div class="content">
+        <!-- الفلاتر -->
+        <div class="filters-card print-hide">
+          <div class="filters-grid">
+            <div class="filter-field car-field">
+              <label for="filter-car">السيارة</label>
+              <select id="filter-car" onchange="loadReport()">
+                <option value="">🚗 كل السيارات</option>
+              </select>
+            </div>
+
+            <div class="filter-field type-field">
+              <label for="filter-type">نوع الصيانة / التكلفة</label>
+              <select id="filter-type" onchange="loadReport()">
+                <option value="">كل الأنواع</option>
+                <optgroup label="الزيت">
+                  <option value="oil">🛢️ تغيير زيت</option>
+                </optgroup>
+                <optgroup label="الفلاتر">
+                  <option value="filter">كل الفلاتر</option>
+                  <option value="filter:air">فلتر هواء</option>
+                  <option value="filter:oil">فلتر زيت</option>
+                  <option value="filter:fuel">فلتر بنزين</option>
+                  <option value="filter:cabin">فلتر كابينة</option>
+                  <option value="filter:other">فلتر أخرى</option>
+                </optgroup>
+                <optgroup label="الرخص والوثائق">
+                  <option value="license">كل الوثائق</option>
+                  <option value="license:license">رخصة</option>
+                  <option value="license:insurance">تأمين</option>
+                  <option value="license:inspection">فحص</option>
+                  <option value="license:ownership">ملكية</option>
+                  <option value="license:other">وثيقة أخرى</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div class="filter-field">
+              <label for="filter-from">من تاريخ</label>
+              <input type="date" id="filter-from" onchange="onDateManualChange()">
+            </div>
+
+            <div class="filter-field">
+              <label for="filter-to">إلى تاريخ</label>
+              <input type="date" id="filter-to" onchange="onDateManualChange()">
+            </div>
+          </div>
+
+          <div class="quick-ranges">
+            <span class="qr-label">فترات سريعة:</span>
+            <button type="button" class="btn btn-ghost" data-range="today" onclick="setQuickRange('today')">اليوم</button>
+            <button type="button" class="btn btn-ghost" data-range="week" onclick="setQuickRange('week')">آخر أسبوع</button>
+            <button type="button" class="btn btn-ghost" data-range="month" onclick="setQuickRange('month')">هذا الشهر</button>
+            <button type="button" class="btn btn-ghost" data-range="last30" onclick="setQuickRange('last30')">آخر ٣٠ يوم</button>
+            <button type="button" class="btn btn-ghost" data-range="all" onclick="setQuickRange('all')">كل الفترات</button>
+          </div>
+        </div>
+
+        <!-- ملخص الفترة -->
+        <div class="report-period" id="report-period">
+          <span>📄 كل الفترات — كل السيارات — كل الأنواع</span>
+          <span id="period-generated"></span>
+        </div>
+
+        <!-- الإحصائيات -->
+        <div id="summary">
+          <div class="loading">جاري تحميل التقرير...</div>
+        </div>
+
+        <!-- التكلفة حسب السيارة -->
+        <div class="report-card" id="per-car-card" style="display:none">
+          <div class="report-head">
+            <h3>🚙 التكلفة حسب السيارة</h3>
+            <span id="per-car-count"></span>
+          </div>
+          <div class="table-wrap">
+            <table class="cost-table per-car-table">
+              <thead>
+                <tr>
+                  <th>السيارة</th>
+                  <th>عدد العمليات</th>
+                  <th>إجمالي التكلفة</th>
+                  <th>النسبة من الإجمالي</th>
+                </tr>
+              </thead>
+              <tbody id="per-car-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- تفاصيل العمليات -->
+        <div class="report-card">
+          <div class="report-head">
+            <h3>🧾 تفاصيل العمليات</h3>
+            <span id="ops-count"></span>
+          </div>
+          <div id="ops-list">
+            <div class="loading">جاري تحميل التقرير...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/jquery.min.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script src="js/utils.js"></script>
+  <script>
+    renderSidebar();
+
+    const FILTER_LABELS = {
+      air: 'فلتر هواء',
+      oil: 'فلتر زيت',
+      fuel: 'فلتر بنزين',
+      cabin: 'فلتر كابينة',
+      other: 'فلتر أخرى',
+    };
+
+    const DOC_LABELS = {
+      license: 'رخصة',
+      insurance: 'تأمين',
+      inspection: 'فحص',
+      ownership: 'ملكية',
+      other: 'وثيقة أخرى',
+    };
+
+    const el = (id) => document.getElementById(id);
+
+    // تاريخ محلي بصيغة YYYY-MM-DD
+    function isoLocal(d = new Date()) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function money(n) {
+      const val = Number(n) || 0;
+      return val.toLocaleString('ar-EG', { maximumFractionDigits: 2 }) + ' ج';
+    }
+
+    // صيغة عربية سليمة للعدد
+    function opsLabel(n) {
+      if (n === 1) return 'عملية واحدة';
+      if (n === 2) return 'عمليتان';
+      if (n >= 3 && n <= 10) return `${n.toLocaleString('ar-EG')} عمليات`;
+      return `${n.toLocaleString('ar-EG')} عملية`;
+    }
+
+    function carsLabel(n) {
+      if (n === 1) return 'سيارة واحدة';
+      if (n === 2) return 'سيارتان';
+      if (n >= 3 && n <= 10) return `${n.toLocaleString('ar-EG')} سيارات`;
+      return `${n.toLocaleString('ar-EG')} سيارة`;
+    }
+
+    function periodText(from, to) {
+      if (from && to) {
+        if (from === to) return `تقرير يوم ${fmtDate(from)}`;
+        return `من ${fmtDate(from)} إلى ${fmtDate(to)}`;
+      }
+      if (from) return `من ${fmtDate(from)} حتى الآن`;
+      if (to) return `حتى ${fmtDate(to)}`;
+      return 'كل الفترات';
+    }
+
+    function typeLabel(r) {
+      if (r.category === 'oil') return 'تغيير زيت';
+      if (r.category === 'filter') return FILTER_LABELS[r.sub_type] || 'فلتر';
+      return DOC_LABELS[r.sub_type] || 'وثيقة';
+    }
+
+    function detailsText(r) {
+      if (r.category === 'oil') {
+        return [r.brand, r.grade].filter(Boolean).join(' — ') || '—';
+      }
+      if (r.category === 'filter') {
+        return r.brand || '—';
+      }
+      return r.doc_number ? `رقم: ${r.doc_number}` : '—';
+    }
+
+    function categoryBadge(category) {
+      if (category === 'oil') return 'yellow';
+      if (category === 'filter') return 'blue';
+      return 'green';
+    }
+
+    // ── فترات سريعة ─────────────────────────────────────────────
+    function markQuickRange(range) {
+      document.querySelectorAll('.quick-ranges .btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.range === range);
+      });
+    }
+
+    function setQuickRange(type) {
+      const now = new Date();
+      const fromEl = el('filter-from');
+      const toEl = el('filter-to');
+
+      if (type === 'today') {
+        fromEl.value = isoLocal(now);
+        toEl.value = isoLocal(now);
+      } else if (type === 'week') {
+        const start = new Date(now);
+        start.setDate(start.getDate() - 6);
+        fromEl.value = isoLocal(start);
+        toEl.value = isoLocal(now);
+      } else if (type === 'month') {
+        fromEl.value = isoLocal(new Date(now.getFullYear(), now.getMonth(), 1));
+        toEl.value = isoLocal(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+      } else if (type === 'last30') {
+        const start = new Date(now);
+        start.setDate(start.getDate() - 29);
+        fromEl.value = isoLocal(start);
+        toEl.value = isoLocal(now);
+      } else {
+        fromEl.value = '';
+        toEl.value = '';
+      }
+
+      markQuickRange(type);
+      loadReport();
+    }
+
+    function onDateManualChange() {
+      markQuickRange('');
+      loadReport();
+    }
+
+    // ── تحميل السيارات ──────────────────────────────────────────
+    async function loadCars() {
+      const { data: cars } = await get('/cars');
+      const opts = cars
+        .map(c => `<option value="${c.id}">${c.plate} — ${c.make} ${c.model}</option>`)
+        .join('');
+      el('filter-car').innerHTML = '<option value="">🚗 كل السيارات</option>' + opts;
+    }
+
+    // ── تحميل التقرير ───────────────────────────────────────────
+    async function loadReport() {
+      const carId = el('filter-car').value;
+      const type = el('filter-type').value;
+      const from = el('filter-from').value;
+      const to = el('filter-to').value;
+
+      if (from && to && from > to) {
+        toast('تاريخ البداية لازم يكون قبل تاريخ النهاية', 'error');
+        return;
+      }
+
+      el('summary').innerHTML = `<div class="loading">جاري تحميل التقرير...</div>`;
+      el('ops-list').innerHTML = `<div class="loading">جاري تحميل التقرير...</div>`;
+      el('per-car-card').style.display = 'none';
+
+      const qs = new URLSearchParams();
+      if (carId) qs.set('car_id', carId);
+      if (type) qs.set('type', type);
+      if (from) qs.set('from', from);
+      if (to) qs.set('to', to);
+
+      try {
+        const { data } = await get('/reports/costs' + (qs.toString() ? '?' + qs.toString() : ''));
+        renderReport(data, { carId, type, from, to });
+      } catch (e) {
+        el('summary').innerHTML = '';
+        el('ops-list').innerHTML =
+          `<div class="empty"><div class="empty-icon">❌</div><h3>تعذر تحميل التقرير</h3><p>${e.message}</p></div>`;
+        toast(e.message, 'error');
+      }
+    }
+
+    // ── رسم التقرير ─────────────────────────────────────────────
+    function renderReport({ rows, summary }, { carId, type, from, to }) {
+      const selectedCar = el('filter-car').selectedOptions[0];
+      const carLabel = carId ? selectedCar.textContent : 'كل السيارات';
+      const typeLabelText = type ? el('filter-type').selectedOptions[0].textContent : 'كل الأنواع';
+
+      el('report-period').innerHTML = `
+        <span>📄 <strong>${periodText(from, to)}</strong> — ${carLabel} — ${typeLabelText}</span>
+        <span>${opsLabel(rows.length)}</span>`;
+
+      const cat = summary.by_category;
+
+      el('summary').innerHTML = `
+        <div class="stats-grid">
+          <div class="stat-box total">
+            <div class="stat-lbl">إجمالي التكلفة</div>
+            <div class="stat-val">${money(summary.total_cost)}</div>
+            <div class="stat-sub">${periodText(from, to)}</div>
+          </div>
+          <div class="stat-box ops">
+            <div class="stat-lbl">عدد العمليات</div>
+            <div class="stat-val">${summary.operations_count.toLocaleString('ar-EG')}</div>
+            <div class="stat-sub">${opsLabel(summary.costed_operations)} بتكلفة مسجلة</div>
+          </div>
+          <div class="stat-box cars">
+            <div class="stat-lbl">عدد السيارات</div>
+            <div class="stat-val">${summary.cars_count.toLocaleString('ar-EG')}</div>
+            <div class="stat-sub">سيارات لها عمليات في الفترة</div>
+          </div>
+          <div class="stat-box avg">
+            <div class="stat-lbl">متوسط تكلفة العملية</div>
+            <div class="stat-val">${money(summary.avg_cost)}</div>
+            <div class="stat-sub">محسوب على العمليات اللي لها تكلفة</div>
+          </div>
+        </div>
+
+        <div class="cat-grid">
+          <div class="cat-card oil" onclick="pickCategory('oil')" title="اعرض تكاليف الزيت فقط">
+            <div class="cat-head"><span>🛢️ تغيير الزيت</span><span>${cat.oil.count.toLocaleString('ar-EG')}</span></div>
+            <div class="cat-cost">${money(cat.oil.cost)}</div>
+            <div class="cat-count">${opsLabel(cat.oil.count)}</div>
+          </div>
+          <div class="cat-card filter" onclick="pickCategory('filter')" title="اعرض تكاليف الفلاتر فقط">
+            <div class="cat-head"><span>🧰 الفلاتر</span><span>${cat.filter.count.toLocaleString('ar-EG')}</span></div>
+            <div class="cat-cost">${money(cat.filter.cost)}</div>
+            <div class="cat-count">${opsLabel(cat.filter.count)}</div>
+          </div>
+          <div class="cat-card license" onclick="pickCategory('license')" title="اعرض تكاليف الرخص والوثائق فقط">
+            <div class="cat-head"><span>📋 الرخص والوثائق</span><span>${cat.license.count.toLocaleString('ar-EG')}</span></div>
+            <div class="cat-cost">${money(cat.license.cost)}</div>
+            <div class="cat-count">${opsLabel(cat.license.count)}</div>
+          </div>
+        </div>`;
+
+      // ── التكلفة حسب السيارة ──
+      if (!rows.length) {
+        el('per-car-card').style.display = 'none';
+      } else {
+        const maxCost = Math.max(...summary.per_car.map(c => c.cost), 1);
+        el('per-car-body').innerHTML = summary.per_car
+          .map(c => {
+            const pct = summary.total_cost ? (c.cost / summary.total_cost) * 100 : 0;
+            const barW = Math.max(2, (c.cost / maxCost) * 100);
+            return `<tr>
+              <td>
+                <div class="car-main">${c.plate}</div>
+                <div class="car-sub">${c.make} ${c.model}</div>
+              </td>
+              <td>${opsLabel(c.count)}</td>
+              <td class="cost-cell">${money(c.cost)}</td>
+              <td>
+                <div class="share-wrap">
+                  <div class="share-bar"><div class="share-fill" style="width:${barW}%"></div></div>
+                  <span class="share-pct">${pct.toLocaleString('ar-EG', { maximumFractionDigits: 1 })}%</span>
+                </div>
+              </td>
+            </tr>`;
+          })
+          .join('');
+        el('per-car-count').textContent = carsLabel(summary.per_car.length);
+        el('per-car-card').style.display = '';
+      }
+
+      // ── تفاصيل العمليات ──
+      el('ops-count').textContent = rows.length ? opsLabel(rows.length) : '';
+
+      if (!rows.length) {
+        el('ops-list').innerHTML =
+          `<div class="empty"><div class="empty-icon">💰</div><h3>لا توجد عمليات</h3><p>مفيش تكاليف مطابقة للفلاتر المختارة — جرّب تغيير السيارة أو النوع أو الفترة</p></div>`;
+        return;
+      }
+
+      el('ops-list').innerHTML = `
+        <div class="table-wrap">
+          <table class="cost-table">
+            <thead>
+              <tr>
+                <th>التاريخ</th>
+                <th>السيارة</th>
+                <th>النوع</th>
+                <th>التفاصيل</th>
+                <th>الكيلومتر</th>
+                <th>التكلفة</th>
+                <th>الورشة / الجهة</th>
+                <th>ملاحظات</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows
+                .map(
+                  r => `<tr>
+                    <td style="white-space:nowrap">${fmtDate(r.change_date)}</td>
+                    <td>
+                      <div class="car-main">${r.plate}</div>
+                      <div class="car-sub">${r.make} ${r.model}</div>
+                    </td>
+                    <td>${badge(typeLabel(r), categoryBadge(r.category))}</td>
+                    <td>${detailsText(r)}</td>
+                    <td style="white-space:nowrap">${r.km_at_change != null ? fmtKm(r.km_at_change) : '—'}</td>
+                    <td class="cost-cell">${money(r.cost)}</td>
+                    <td>${r.workshop || '—'}</td>
+                    <td class="notes-cell">${r.notes || '—'}</td>
+                  </tr>`
+                )
+                .join('')}
+            </tbody>
+          </table>
+        </div>`;
+    }
+
+    // اختيار نوع من كارت التصنيف
+    function pickCategory(category) {
+      el('filter-type').value = category;
+      loadReport();
+    }
+
+    // ── بدء التشغيل ─────────────────────────────────────────────
+    markQuickRange('all');
+    loadCars()
+      .then(loadReport)
+      .catch(e => toast(e.message, 'error'));
+  </script>
+</body>
+
+</html>

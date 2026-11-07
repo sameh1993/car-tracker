@@ -38,14 +38,13 @@ const pages = {
   "/": "index",
   "/index": "index",
   "/cars": "cars",
+  "/cost-report": "cost-report",
   "/filters": "filters",
   "/licenses": "licenses",
-  "/monthly-reports": "monthly-reports",
   "/odometer": "odometer",
   "/odometer-capture": "odometer-capture",
   "/oil": "oil",
   "/oil-status": "oil-status",
-  "/reports": "reports",
   "/index321": "index321",
 };
 

@@ -16,6 +16,8 @@ const filterController = {
     const rows = await FilterModel.findAll({
       carId:      req.query.car_id      || null,
       filterType: req.query.filter_type || null,
+      from:       req.query.from        || null,
+      to:         req.query.to          || null,
     });
     res.json({ success: true, data: rows });
   },

@@ -3,6 +3,7 @@ const router             = express.Router();
 const odometerController = require('../controllers/odometerController');
 const asyncHandler       = require('../middleware/asyncHandler');
 
+router.get('/',             asyncHandler(odometerController.getReport));
 router.get('/:carId/latest', asyncHandler(odometerController.getLatest));
 router.get('/:carId',        asyncHandler(odometerController.getHistory));
 router.post('/',             asyncHandler(odometerController.create));

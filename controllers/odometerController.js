@@ -1,6 +1,30 @@
 const OdometerModel = require('../models/OdometerModel');
 
+const isDate = (v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+
 const odometerController = {
+
+  // GET /api/odometer?car_id=&from=&to=
+  // تقرير قراءات العداد لكل السيارات (أو سيارة محددة) خلال فترة
+  getReport: async (req, res) => {
+    const { car_id, from, to } = req.query;
+
+    const logs = await OdometerModel.findAll({
+      carId: car_id || null,
+      from: isDate(from) ? from : null,
+      to: isDate(to) ? to : null,
+    });
+
+    res.json({
+      success: true,
+      data: logs,
+      filters: {
+        car_id: car_id || null,
+        from: isDate(from) ? from : null,
+        to: isDate(to) ? to : null,
+      },
+    });
+  },
 
   // GET /api/odometer/:carId
   getHistory: async (req, res) => {

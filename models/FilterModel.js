@@ -3,12 +3,14 @@ const { pool } = require('../config/db');
 const FilterModel = {
 
   // كل تغييرات الفلاتر مع فلاتر اختيارية
-  async findAll({ carId = null, filterType = null } = {}) {
+  async findAll({ carId = null, filterType = null, from = null, to = null } = {}) {
     const conditions = ['1=1'];
     const params     = [];
 
-    if (carId)      { conditions.push('f.car_id = ?');      params.push(carId); }
-    if (filterType) { conditions.push('f.filter_type = ?'); params.push(filterType); }
+    if (carId)      { conditions.push('f.car_id = ?');       params.push(carId); }
+    if (filterType) { conditions.push('f.filter_type = ?');  params.push(filterType); }
+    if (from)       { conditions.push('f.change_date >= ?'); params.push(from); }
+    if (to)         { conditions.push('f.change_date <= ?'); params.push(to); }
 
     const [rows] = await pool.query(`
       SELECT

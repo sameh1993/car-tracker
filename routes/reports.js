@@ -7,6 +7,7 @@ const asyncHandler     = require('../middleware/asyncHandler');
 router.get('/odometer',          asyncHandler(reportController.odometerByMonth));
 router.get('/maintenance-costs', asyncHandler(reportController.maintenanceCosts));
 router.get('/oil-status',        asyncHandler(reportController.dailyOilStatus));
+router.get('/costs',             asyncHandler(reportController.costs));
 router.get('/:type',             asyncHandler(reportController.generate));
 
 module.exports = router;
