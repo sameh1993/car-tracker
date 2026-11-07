@@ -9,7 +9,7 @@
         "db:init": "node db/init.js"
     },
     "engines": {
-        "node": "20.x"
+        "node": "26.x"
     },
     "dependencies": {
         "express": "^4.18.2",
